@@ -146,7 +146,12 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
                 <Button variant="secondary" className="flex-1 h-16 text-[10px]" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                   Update
                 </Button>
-                <Button variant="danger" className="flex-1 h-16 text-[10px]" onClick={() => setShowRemoveConfirm(true)} disabled={isUploading || !previewUrl}>
+                <Button
+                  variant="danger"
+                  className="flex-1 h-16 text-[10px]"
+                  onClick={() => setShowRemoveConfirm(true)}
+                  disabled={isUploading || !previewUrl}
+                >
                   Remove
                 </Button>
               </div>
