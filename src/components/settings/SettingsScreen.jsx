@@ -10,8 +10,8 @@ import { sanitizeString } from '../../utils/security';
 import { ConfirmModal } from '../modals/ConfirmModal';
 
 const ACCENTS = [
-  { n: 'Cyan', v: '#00d2ff' }, { n: 'Lime', v: '#D4FF32' }, { n: 'Emerald', v: '#4ADE80' },
-  { n: 'Violet', v: '#A78BFA' }, { n: 'Amber', v: '#FBBF24' }, { n: 'Rose', v: '#FB7185' }
+  { n: 'Crimson', v: '#FB7185' }, { n: 'Lime', v: '#D4FF32' }, { n: 'Cobalt', v: '#00D2FF' },
+  { n: 'Amber', v: '#FBBF24' }, { n: 'Emerald', v: '#4ADE80' }, { n: 'Violet', v: '#A78BFA' }
 ];
 
 /**
