@@ -156,6 +156,16 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
                 </Button>
               </div>
 
+              {/* HIGH-FIDELITY OVERLAY */}
+              <ConfirmModal
+                isOpen={showRemoveConfirm}
+                onClose={() => setShowRemoveConfirm(false)}
+                onConfirm={handleRemovePfp}
+                title="Purge Identity?"
+                message="This will permanently delete your profile photo from the secure vault."
+                confirmText="Purge"
+              />
+
               <div className="w-full space-y-8 pt-8 border-t border-white/5">
                 <Input label="User Handle" value={displayName} onChange={setDisplayName} isDark />
                 <Button className="w-full h-16" onClick={handleUpdateProfile}>
