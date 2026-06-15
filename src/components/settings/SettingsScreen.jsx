@@ -4,9 +4,10 @@ import { User, Check, Plus, ArrowUp, ArrowDown, Crown, Activity, Zap, Edit2, Tra
 import { updateProfile } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
-import { Card, Input } from '../Common';
+import { Card, Input, Button } from '../Common';
 import { cn } from '../../utils/utils';
 import { sanitizeString } from '../../utils/security';
+import { ConfirmModal } from '../modals/ConfirmModal';
 
 const ACCENTS = [
   { n: 'Cyan', v: '#00d2ff' }, { n: 'Lime', v: '#D4FF32' }, { n: 'Emerald', v: '#4ADE80' },
@@ -41,9 +42,10 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
   const [la, setLa] = useState(settings.accent);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(settings.avatar || user?.photoURL || null);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Sync preview with incoming settings changes (e.g. from other devices or after successful update)
+  // Sync preview with incoming settings changes
   React.useEffect(() => {
     setPreview(settings.avatar || user?.photoURL || null);
   }, [settings.avatar, user?.photoURL]);
@@ -65,6 +67,8 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
 
       try {
         await updateDoc(doc(db, 'users', user.uid), { avatar: base64 });
+        // Also update Auth profile photoURL for redundancy/system-wide consistency
+        await updateProfile(auth.currentUser, { photoURL: base64 });
       } catch (err) {
         setPreview(settings.avatar || user?.photoURL || null);
         alert(`Identity Sync Failure: ${err.message}`);
@@ -76,12 +80,17 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
   };
 
   const handleRemovePfp = async () => {
-    if (!window.confirm("Purge profile image?")) return;
     setUploading(true);
     try {
+      // 1. Purge from Firestore Settings
       await updateDoc(doc(db, 'users', user.uid), { avatar: null });
+      // 2. Purge from Firebase Auth profile
+      await updateProfile(auth.currentUser, { photoURL: null });
+      // 3. Clear local states
       setPreview(null);
+      console.log("[IDENTITY] Profile picture purged successfully.");
     } catch (err) {
+      console.error("[IDENTITY] Removal Error:", err);
       alert("Removal Failed.");
     } finally {
       setUploading(false);
@@ -132,20 +141,31 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
 
               {/* Action Suite: Explicit Update/Remove */}
               <div className="flex gap-4 w-full">
-                <button
+                <Button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 h-12 bg-white/5 border border-white/10 rounded-xl text-[10px] font-[1000] uppercase tracking-widest hover:bg-white/10 transition-all text-white/60 hover:text-white"
+                  variant="secondary"
+                  className="flex-1 h-14 text-[10px]"
                 >
                   Update
-                </button>
-                <button
-                  onClick={handleRemovePfp}
+                </Button>
+                <Button
+                  onClick={() => setShowRemoveConfirm(true)}
                   disabled={!preview || uploading}
-                  className="flex-1 h-12 bg-rose-500/5 border border-rose-500/10 rounded-xl text-[10px] font-[1000] uppercase tracking-widest hover:bg-rose-500/10 transition-all text-rose-500/60 hover:text-rose-500 disabled:opacity-0"
+                  variant="danger"
+                  className="flex-1 h-14 text-[10px]"
                 >
                   Remove
-                </button>
+                </Button>
               </div>
+
+              <ConfirmModal
+                isOpen={showRemoveConfirm}
+                onClose={() => setShowRemoveConfirm(false)}
+                onConfirm={handleRemovePfp}
+                title="Purge Identity?"
+                message="This will permanently delete your profile picture from all active sessions."
+                confirmText="Purge"
+              />
 
               <div className="w-full space-y-8 pt-4 border-t border-white/5">
                 <Input label="Display Name" value={n} onChange={setN} isDark />
