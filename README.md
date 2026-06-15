@@ -6,8 +6,23 @@ TABAK++ is a professional, production-grade Progressive Web App (PWA) built to s
 
 ---
 
+## 🖼️ Visual Showcase
+
+### 📊 Dashboard (Track)
+A high-density grid tracking dashboard that adapts from an 11px compact mobile view to a 7xl wide desktop command center.
+![Track Screen](https://raw.githubusercontent.com/shareef01/tabakpp-pwa/main/public/screenshots/track.png)
+
+### 📈 Analytics (History)
+High-fidelity historical data visualization showing daily velocity and long-term health trends.
+![History Screen](https://raw.githubusercontent.com/shareef01/tabakpp-pwa/main/public/screenshots/history.png)
+
+### ⚙️ Identity & Controls (Settings)
+Sophisticated identity management and "Obsidian Glass" styling with real-time cloud synchronization.
+![Settings Screen](https://raw.githubusercontent.com/shareef01/tabakpp-pwa/main/public/screenshots/settings.png)
+
+---
+
 ## 🎯 Key Features
-*   **High-Density Grid Tracking**: Multi-column responsive dashboard that adapts from an 11px compact mobile view to a 7xl wide desktop command center.
 *   **Visual Urgency & Rewards**: High-fidelity 3D gauges and progress rings that transform raw counts into visual urgency and positive reinforcement (XP, Savings, Health metrics).
 *   **Real-Time Cloud Sync**: Seamless cross-device synchronization using Firebase Firestore listeners—entry on one device reflects instantly on all other active sessions.
 *   **Identity Personalization**: Custom avatar synchronization using Firestore-Base64 storage for free-tier optimization and zero-latency local previews.
