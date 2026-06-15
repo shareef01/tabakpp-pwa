@@ -179,48 +179,30 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
                 )}
               </div>
 
+              {/* Action Suite: Explicit Update/Remove */}
               <div className="flex gap-4 w-full">
-                <Button
-                  onClick={() => {
-                    console.log("[IDENTITY] Update Triggered");
-                    fileInputRef.current?.click();
-                  }}
-                  variant="secondary"
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="flex-1 h-14 text-[10px]"
+                  className="flex-1 h-14 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-[1000] uppercase tracking-widest hover:bg-white/10 transition-all text-white/60 hover:text-white disabled:opacity-30"
                 >
                   Update
-                </Button>
-                <Button
-                  onClick={() => {
-                    console.log("[IDENTITY] Remove Button Clicked - PreviewURL:", !!previewUrl);
-                    setShowRemoveConfirm(true);
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    console.log("[IDENTITY_SYNC] Manual Purge Triggered");
+                    if (window.confirm("ARE YOU SURE? This will permanently delete your profile photo from the TABAK++ secure vault.")) {
+                      await handleRemovePfp();
+                    }
                   }}
                   disabled={!previewUrl || isUploading}
-                  variant="danger"
-                  className="flex-1 h-14 text-[10px]"
+                  className="flex-1 h-14 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-[10px] font-[1000] uppercase tracking-widest hover:bg-rose-500/20 transition-all text-rose-500 hover:text-rose-400 disabled:opacity-0"
                 >
                   Remove
-                </Button>
+                </button>
               </div>
-
-              {/* Ensure Modal is mounted outside conditional button scope for reliability */}
-              {showRemoveConfirm && (
-                <ConfirmModal
-                  isOpen={showRemoveConfirm}
-                  onClose={() => {
-                    console.log("[IDENTITY] Confirm Modal Closed");
-                    setShowRemoveConfirm(false);
-                  }}
-                  onConfirm={() => {
-                    console.log("[IDENTITY] Purge Confirmed");
-                    handleRemovePfp();
-                  }}
-                  title="Purge Identity?"
-                  message="This will permanently delete your profile picture from the secure registry vault."
-                  confirmText="Purge"
-                />
-              )}
 
               <div className="w-full space-y-8 pt-8 border-t border-white/5">
                 <Input label="Display Name" value={displayName} onChange={setDisplayName} isDark />
