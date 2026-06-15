@@ -38,74 +38,109 @@ const ProtocolListItem = React.memo(({ config, idx, total, onReo, onEdit, onDel 
 ));
 
 export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP, onUpd, onDel }) => {
-  const [n, setN] = useState(user?.displayName || '');
-  const [la, setLa] = useState(settings.accent);
-  const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState(settings.avatar || user?.photoURL || null);
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [localAccent, setLocalAccent] = useState(settings.accent);
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(settings.avatar || user?.photoURL || null);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Sync preview with incoming settings changes
+  // --- REHACTIVE SYNC: Keep local preview in step with Cloud SSOT ---
   React.useEffect(() => {
-    setPreview(settings.avatar || user?.photoURL || null);
+    setPreviewUrl(settings.avatar || user?.photoURL || null);
   }, [settings.avatar, user?.photoURL]);
 
+  /**
+   * High-Fidelity Profile Upload
+   * Uses Base64 to bypass Storage limitations.
+   */
   const handlePfpUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !user) return;
 
-    if (file.size > 400 * 1024) {
-      alert("Image too large. Please select a file smaller than 400KB.");
+    if (file.size > 500 * 1024) {
+      alert("Image exceeds the 500KB limit for cloud synchronization.");
       return;
     }
 
+    setIsUploading(true);
     const reader = new FileReader();
+
+    reader.onerror = () => {
+      setIsUploading(false);
+      alert("Local file read failed.");
+    };
+
     reader.onload = async (event) => {
-      const base64 = event.target.result;
-      setPreview(base64);
-      setUploading(true);
+      const base64Data = event.target.result;
+      setPreviewUrl(base64Data);
 
       try {
-        await updateDoc(doc(db, 'users', user.uid), { avatar: base64 });
-        // Also update Auth profile photoURL for redundancy/system-wide consistency
-        await updateProfile(auth.currentUser, { photoURL: base64 });
+        console.log("[IDENTITY_SYNC] Handshake started...");
+        // 1. Commit to Firestore (Primary SSOT)
+        await updateDoc(doc(db, 'users', user.uid), { avatar: base64Data });
+
+        // 2. Update Auth Profile (Legacy Redundancy)
+        try {
+          await updateProfile(auth.currentUser, { photoURL: base64Data });
+        } catch (authErr) {
+          console.warn("[IDENTITY_SYNC] Auth profile update failed, but Firestore was successful.", authErr);
+        }
+
+        console.log("[IDENTITY_SYNC] Handshake complete.");
       } catch (err) {
-        setPreview(settings.avatar || user?.photoURL || null);
+        console.error("[IDENTITY_SYNC] FATAL_ERROR:", err);
+        setPreviewUrl(settings.avatar || user?.photoURL || null);
         alert(`Identity Sync Failure: ${err.message}`);
       } finally {
-        setUploading(false);
+        setIsUploading(false);
       }
     };
+
     reader.readAsDataURL(file);
   };
 
+  /**
+   * Secure Profile Purge
+   */
   const handleRemovePfp = async () => {
-    setUploading(true);
+    setIsUploading(true);
     try {
-      // 1. Purge from Firestore Settings
+      console.log("[IDENTITY_SYNC] Purging identity assets...");
+      // 1. Nullify Firestore field
       await updateDoc(doc(db, 'users', user.uid), { avatar: null });
-      // 2. Purge from Firebase Auth profile
-      await updateProfile(auth.currentUser, { photoURL: null });
-      // 3. Clear local states
-      setPreview(null);
-      console.log("[IDENTITY] Profile picture purged successfully.");
+
+      // 2. Nullify Auth profile
+      try {
+        await updateProfile(auth.currentUser, { photoURL: null });
+      } catch (authErr) {
+        console.warn("[IDENTITY_SYNC] Auth profile purge failed.", authErr);
+      }
+
+      setPreviewUrl(null);
+      console.log("[IDENTITY_SYNC] Assets purged.");
     } catch (err) {
-      console.error("[IDENTITY] Removal Error:", err);
-      alert("Removal Failed.");
+      console.error("[IDENTITY_SYNC] Purge Failure:", err);
+      alert("Purge failed. Verify network connectivity.");
     } finally {
-      setUploading(false);
+      setIsUploading(false);
+      setShowRemoveConfirm(false);
     }
   };
 
+  /**
+   * Profile Metadata Update
+   */
   const handleUpdateProfile = async () => {
-    const cleanName = sanitizeString(n);
+    const cleanName = sanitizeString(displayName);
     if (!cleanName) return;
     try {
       await updateProfile(auth.currentUser, { displayName: cleanName });
       await updateDoc(doc(db, 'users', user.uid), { name: cleanName });
-      alert("Profile Securely Updated");
+      alert("Identity Securely Updated");
     } catch (e) {
       console.error(e);
+      alert("Update failed.");
     }
   };
 
@@ -115,42 +150,47 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
         <div className="lg:col-span-5 space-y-8">
           <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl shadow-black/50 relative overflow-hidden">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-8">Display Identity</h3>
-            <div className="flex flex-col items-center gap-8">
+            <div className="flex flex-col items-center gap-8 text-center">
               <input type="file" ref={fileInputRef} onChange={handlePfpUpload} className="hidden" accept="image/*" />
 
-              {/* Profile Avatar Interaction Zone */}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="w-32 h-32 rounded-[40px] bg-accent/5 border border-accent/20 flex items-center justify-center shadow-2xl relative group overflow-hidden transition-all hover:border-accent/50"
-              >
-                {uploading && (
-                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <Loader2 className="animate-spin text-accent" size={32} />
+              <div className="relative group">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="w-32 h-32 rounded-[40px] bg-accent/5 border border-accent/20 flex items-center justify-center shadow-2xl relative overflow-hidden transition-all hover:border-accent/50"
+                >
+                  {isUploading ? (
+                    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                      <Loader2 className="animate-spin text-accent" size={32} />
+                    </div>
+                  ) : null}
+
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="Avatar" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                  ) : (
+                    <User size={48} className="text-accent" strokeWidth={2.5} />
+                  )}
+                </button>
+
+                {!isUploading && (
+                  <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-xl shadow-xl flex items-center justify-center text-zinc-950 pointer-events-none border-4 border-[#0a0a0c]">
+                    <Camera size={16} strokeWidth={3} />
                   </div>
                 )}
-                {preview ? (
-                  <img src={preview} alt="Avatar" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                ) : (
-                  <User size={48} className="text-accent" strokeWidth={2.5} />
-                )}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
-                  <Camera size={24} className="text-white" />
-                </div>
-              </button>
+              </div>
 
-              {/* Action Suite: Explicit Update/Remove */}
               <div className="flex gap-4 w-full">
                 <Button
                   onClick={() => fileInputRef.current?.click()}
                   variant="secondary"
+                  disabled={isUploading}
                   className="flex-1 h-14 text-[10px]"
                 >
                   Update
                 </Button>
                 <Button
                   onClick={() => setShowRemoveConfirm(true)}
-                  disabled={!preview || uploading}
+                  disabled={!previewUrl || isUploading}
                   variant="danger"
                   className="flex-1 h-14 text-[10px]"
                 >
@@ -163,11 +203,29 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
                 onClose={() => setShowRemoveConfirm(false)}
                 onConfirm={handleRemovePfp}
                 title="Purge Identity?"
-                message="This will permanently delete your profile picture from all active sessions."
+                message="This will permanently delete your profile picture from the secure registry vault."
                 confirmText="Purge"
               />
 
-              <div className="w-full space-y-8 pt-4 border-t border-white/5">
+              <div className="w-full space-y-8 pt-8 border-t border-white/5">
+                <Input label="Display Name" value={displayName} onChange={setDisplayName} isDark />
+                <button
+                  onClick={handleUpdateProfile}
+                  className="w-full h-16 bg-white text-zinc-950 font-[1000] uppercase tracking-[0.4em] rounded-2xl active:scale-[0.98] transition-all text-[11px] shadow-2xl"
+                >
+                  Update Profile
+                </button>
+              </div>
+            </div>
+          </section>
+          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl shadow-black/50">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-8">Appearance</h3>
+            <div className="space-y-8">
+              <div className="grid grid-cols-3 gap-4">{ACCENTS.map(x => ( <button key={x.v} onClick={() => setLocalAccent(x.v)} className={cn("h-14 rounded-2xl border-2 transition-all duration-300 relative flex items-center justify-center", localAccent === x.v ? "border-white scale-105 shadow-xl" : "border-white/5 opacity-40 hover:opacity-100")} style={{ backgroundColor: x.v }}>{localAccent === x.v && <Check size={20} className="text-white drop-shadow-md" strokeWidth={4} />}</button> ))}</div>
+              <button onClick={() => onUpd({ accent: localAccent })} className="w-full h-16 bg-white/5 border border-white/10 text-white font-[1000] uppercase tracking-[0.4em] rounded-2xl active:scale-[0.98] transition-all text-[11px] hover:bg-white/10">Save Theme</button>
+            </div>
+          </section>
+        </div>
                 <Input label="Display Name" value={n} onChange={setN} isDark />
                 <button
                   onClick={handleUpdateProfile}
