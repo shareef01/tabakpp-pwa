@@ -7,6 +7,9 @@ import { doc, deleteDoc } from 'firebase/firestore';
 import { Card, StaggeredItem } from '../Common';
 import { cn } from '../../utils/utils';
 
+import { formatDateDisplay } from '../../utils/formatters';
+import { safeAsync } from '../../utils/errorHandlers';
+
 /**
  * Premium Metric Block
  * High-fidelity stat cards with glassmorphism.
@@ -17,7 +20,7 @@ const InsightCard = React.memo(({ icon: Icon, label, val, sub, color }) => (
        <Icon size={20} />
      </div>
      <span className="text-3xl font-[1000] tracking-tighter tabular-nums mb-1 text-white leading-none">
-       {val}
+       {val ?? 0}
      </span>
      <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">
        {sub}
@@ -30,14 +33,19 @@ const InsightCard = React.memo(({ icon: Icon, label, val, sub, color }) => (
 
 export const HistoryScreen = React.memo(({ logs, m, onEdit, userId, today }) => {
   const onDelete = async (logDate) => {
-    if (window.confirm("Purge record?")) {
-      try {
-        await deleteDoc(doc(db, 'users', userId, 'logs', logDate));
-      } catch (e) {
-        alert(e.message);
-      }
-    }
+    if (!window.confirm("Purge record?")) return;
+
+    await safeAsync(async () => {
+      await deleteDoc(doc(db, 'users', userId, 'logs', logDate));
+    }, 'PURGE_LOG');
   };
+
+  const chartData = useMemo(() => {
+    return (logs ?? []).slice(0, 10).reverse().map(l => ({
+      name: new Date(l.logDate).toLocaleDateString(undefined, { weekday: 'short' }).toUpperCase(),
+      val: Object.values(l.counts ?? {}).reduce((a, b) => a + b, 0)
+    }));
+  }, [logs]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto px-4 lg:px-8 space-y-8 font-inter pb-24">
@@ -56,10 +64,7 @@ export const HistoryScreen = React.memo(({ logs, m, onEdit, userId, today }) => 
 
          <div className="h-64 lg:h-80 w-full max-h-80">
            <ResponsiveContainer width="100%" height="100%">
-             <LineChart data={logs.slice(0, 10).reverse().map(l => ({
-               name: new Date(l.logDate).toLocaleDateString(undefined, {weekday:'short'}).toUpperCase(),
-               val: Object.values(l.counts || {}).reduce((a,b)=>a+b, 0)
-             }))}>
+             <LineChart data={chartData}>
                <CartesianGrid strokeDasharray="8 8" stroke="#ffffff03" vertical={false} />
                <XAxis dataKey="name" stroke="#525252" fontSize={10} axisLine={false} tickLine={false} tick={{fontWeight:900}} dy={15} />
                <Tooltip contentStyle={{ background: '#121212', border: '1px solid #ffffff10', borderRadius: '16px', fontSize: '12px', fontWeight: 900 }} />
@@ -74,8 +79,8 @@ export const HistoryScreen = React.memo(({ logs, m, onEdit, userId, today }) => 
          {/* STATS COLUMN: Left on Desktop, Grid on Mobile */}
          <div className="lg:col-span-4 grid grid-cols-3 lg:grid-cols-1 gap-4 lg:gap-6">
            <InsightCard icon={TrendingUp} label="Streak" val={m.streak} sub="Days" color="text-amber-400" />
-           <InsightCard icon={Wallet} label="Saved" val={`$${(m.savings || 0).toFixed(2)}`} sub="Capital" color="text-emerald-400" />
-           <InsightCard icon={Activity} label="Health" val={`${Math.floor((m.lost || 0)/60)}H`} sub="Recovered" color="text-rose-400" />
+           <InsightCard icon={Wallet} label="Saved" val={`$${(m.savings ?? 0).toFixed(2)}`} sub="Capital" color="text-emerald-400" />
+           <InsightCard icon={Activity} label="Health" val={`${Math.floor((m.lost ?? 0)/60)}H`} sub="Recovered" color="text-rose-400" />
          </div>
 
          {/* FEED COLUMN: Right on Desktop, Full Width Mobile */}
@@ -86,10 +91,10 @@ export const HistoryScreen = React.memo(({ logs, m, onEdit, userId, today }) => 
                <div key={log.logDate} className="flex items-center justify-between p-5 bg-black/20 rounded-2xl border border-white/5 hover:border-white/10 transition-all group">
                  <div className="flex flex-col gap-1">
                    <span className="text-sm font-bold text-white uppercase tracking-tight">
-                     {log.logDate === today ? 'Today' : new Date(log.logDate).toLocaleDateString(undefined, {month:'short', day:'numeric', weekday:'short'}).toUpperCase()}
+                     {log.logDate === today ? 'Today' : formatDateDisplay(log.logDate)}
                    </span>
                    <span className="text-[10px] font-black text-accent/60 uppercase tracking-widest">
-                     {Object.values(log.counts || {}).reduce((a,b)=>a+b, 0) } Registry Units
+                     {Object.values(log.counts ?? {}).reduce((a, b) => a + b, 0)} Registry Units
                    </span>
                  </div>
                  <div className="flex items-center gap-2">

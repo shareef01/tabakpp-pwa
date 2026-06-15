@@ -5,15 +5,9 @@ import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
 // --- UTILS ---
-const cn = (...classes) => classes.filter(Boolean).join(' ');
+import { hexToRgbValues } from './utils/formatters';
 
-const hexToRgb = (hex) => {
-  try {
-    const h = hex || '#00d2ff';
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);
-    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 210, 255';
-  } catch { return '0, 210, 255'; }
-};
+const cn = (...classes) => classes.filter(Boolean).join(' ');
 
 // --- CONTEXT & HOOKS ---
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -159,7 +153,7 @@ const AppContent = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#020202] text-white font-inter selection:bg-accent/30 overflow-x-hidden flex flex-col font-inter" style={{ '--accent': settings.accent, '--accent-rgb': hexToRgb(settings.accent) }}>
+    <div className="min-h-screen w-full bg-[#020202] text-white font-inter selection:bg-accent/30 overflow-x-hidden flex flex-col font-inter" style={{ '--accent': settings.accent, '--accent-rgb': hexToRgbValues(settings.accent) }}>
       {!user ? (
         <Suspense fallback={<LoadingView />}>
           <AuthScreen accent={settings.accent} />

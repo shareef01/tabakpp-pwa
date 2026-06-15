@@ -8,8 +8,8 @@ import { SmokingCalculator } from '../utils/smokingCalculator';
  * and all derived data is memoized (useMemo).
  */
 export const useRegistry = (user, today) => {
-  const [configs, setConfigs] = useState([]);
-  const [logs, setLogs] = useState([]);
+  const [counterProtocols, setCounterProtocols] = useState([]);
+  const [historicalLogs, setHistoricalLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -24,7 +24,7 @@ export const useRegistry = (user, today) => {
     const unsubConfigs = RegistryService.subscribeToConfigs(
       user.uid,
       (data) => {
-        setConfigs(data.length > 0 ? data : [
+        setCounterProtocols(data.length > 0 ? data : [
           { id: 'cigarettes', name: 'Cigarettes', limit: 20, type: 'CIGARETTE', price: 0, order: 0 }
         ]);
         setLoading(false);
@@ -37,7 +37,7 @@ export const useRegistry = (user, today) => {
 
     const unsubLogs = RegistryService.subscribeToLogs(
       user.uid,
-      (data) => setLogs(data),
+      (data) => setHistoricalLogs(data),
       (err) => {
         setError(err.message);
         setLoading(false);
@@ -45,64 +45,67 @@ export const useRegistry = (user, today) => {
     );
 
     return () => {
-      unsubConfigs();
-      unsubLogs();
+      unsubConfigs?.();
+      unsubLogs?.();
     };
   }, [user]);
 
   const metrics = useMemo(() => {
     try {
-      const tLog = logs.find(l => l.logDate === today) || { logDate: today, counts: {} };
-      const c = SmokingCalculator.getTotalCount(tLog, configs);
-      const l = SmokingCalculator.getTotalLimit(configs);
-      const s = SmokingCalculator.calculateStreak(logs, configs);
-      const x = SmokingCalculator.calculateXP(logs, s);
+      const todayLog = historicalLogs.find(l => l.logDate === today) || { logDate: today, counts: {} };
+      const totalCount = SmokingCalculator.getTotalCount(todayLog, counterProtocols);
+      const totalLimit = SmokingCalculator.getTotalLimit(counterProtocols);
+      const currentStreak = SmokingCalculator.calculateStreak(historicalLogs, counterProtocols);
+      const totalXP = SmokingCalculator.calculateXP(historicalLogs, currentStreak);
+
       return {
-        count: c, limit: l, streak: s, xp: x,
-        rank: SmokingCalculator.getRank(x),
-        progress: l > 0 ? c / l : 0,
-        savings: SmokingCalculator.calculateSavings(logs, configs, 0.5) || 0,
-        lost: SmokingCalculator.calculateLifeLostMinutes(logs) || 0,
-        todayLog: tLog
+        count: totalCount,
+        limit: totalLimit,
+        streak: currentStreak,
+        xp: totalXP,
+        rank: SmokingCalculator.getRank(totalXP),
+        progress: totalLimit > 0 ? totalCount / totalLimit : 0,
+        savings: SmokingCalculator.calculateSavings(historicalLogs, counterProtocols, 0.5) ?? 0,
+        lost: SmokingCalculator.calculateLifeLostMinutes(historicalLogs) ?? 0,
+        todayLog
       };
     } catch (e) {
       return { count: 0, limit: 1, streak: 0, xp: 0, rank: '...', progress: 0, todayLog: { counts: {} } };
     }
-  }, [logs, configs, today]);
+  }, [historicalLogs, counterProtocols, today]);
 
   const increment = useCallback(async (id) => {
     if (!user) return;
-    const counts = metrics.todayLog.counts || {};
+    const currentCounts = metrics.todayLog?.counts ?? {};
     try {
-      await RegistryService.updateDailyLog(user.uid, today, { ...counts, [id]: (counts[id] || 0) + 1 });
+      await RegistryService.updateDailyLog(user.uid, today, { ...currentCounts, [id]: (currentCounts[id] ?? 0) + 1 });
     } catch (err) { setError(err.message); }
-  }, [user, today, metrics.todayLog.counts]);
+  }, [user, today, metrics.todayLog]);
 
   const decrement = useCallback(async (id) => {
     if (!user) return;
-    const counts = metrics.todayLog.counts || {};
-    if (!counts[id] || counts[id] <= 0) return;
+    const currentCounts = metrics.todayLog?.counts ?? {};
+    if (!currentCounts[id] || currentCounts[id] <= 0) return;
     try {
-      await RegistryService.updateDailyLog(user.uid, today, { ...counts, [id]: counts[id] - 1 });
+      await RegistryService.updateDailyLog(user.uid, today, { ...currentCounts, [id]: currentCounts[id] - 1 });
     } catch (err) { setError(err.message); }
-  }, [user, today, metrics.todayLog.counts]);
+  }, [user, today, metrics.todayLog]);
 
   const reorder = useCallback(async (id, dir) => {
     if (!user) return;
-    const sorted = [...configs].sort((a,b) => a.order - b.order);
+    const sorted = [...counterProtocols].sort((a,b) => a.order - b.order);
     const idx = sorted.findIndex(x => x.id === id);
     if ((dir === 'up' && idx === 0) || (dir === 'down' && idx === sorted.length - 1)) return;
     const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
     try {
       await RegistryService.reorderConfigs(user.uid, sorted[idx], sorted[swapIdx]);
     } catch (err) { setError(err.message); }
-  }, [user, configs]);
+  }, [user, counterProtocols]);
 
-  // STABLE ACTION HANDLERS
   const addProtocol = useCallback((data) => {
     if (!user) return;
-    return RegistryService.addProtocol(user.uid, { ...data, order: configs.length });
-  }, [user, configs.length]);
+    return RegistryService.addProtocol(user.uid, { ...data, order: counterProtocols.length });
+  }, [user, counterProtocols.length]);
 
   const updateProtocol = useCallback((id, data) => {
     if (!user) return;
@@ -114,11 +117,9 @@ export const useRegistry = (user, today) => {
     return RegistryService.deleteProtocol(user.uid, id);
   }, [user]);
 
-  const clearError = useCallback(() => setError(null), []);
-
   return {
-    configs,
-    logs,
+    configs: counterProtocols,
+    logs: historicalLogs,
     metrics,
     loading,
     error,
@@ -128,6 +129,6 @@ export const useRegistry = (user, today) => {
     addProtocol,
     updateProtocol,
     deleteProtocol,
-    clearError
+    clearError: useCallback(() => setError(null), [])
   };
 };
