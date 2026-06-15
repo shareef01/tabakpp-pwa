@@ -4,12 +4,13 @@ import { cn } from '../utils/utils';
 
 /**
  * UI Constants for Design System Consistency
+ * Standardized to ensure high-contrast and consistent geometry.
  */
 export const UI = {
   CARD: "bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] shadow-xl shadow-black/50 transition-all duration-500",
-  INPUT: "h-14 px-6 rounded-2xl border bg-neutral-900/50 border-neutral-700 text-white focus:ring-1 focus:ring-accent focus:border-accent focus:bg-neutral-900/80 outline-none transition-all placeholder:text-neutral-600 font-bold shadow-inner",
-  BUTTON_BASE: "rounded-2xl font-[1000] uppercase tracking-[0.4em] flex items-center justify-center transition-all active:scale-[0.98] disabled:opacity-50 select-none overflow-hidden relative group shadow-2xl",
-  LABEL: "text-[10px] font-bold text-neutral-500 tracking-[0.3em] uppercase ml-1"
+  INPUT: "h-14 px-6 rounded-2xl border bg-neutral-900/50 border-neutral-700 text-white focus:ring-2 focus:ring-accent focus:border-accent focus:bg-neutral-900/80 outline-none transition-all placeholder:text-neutral-600 font-bold shadow-inner text-base", // Added text-base to prevent iOS zoom
+  BUTTON_BASE: "min-h-[48px] min-w-[48px] rounded-2xl font-[1000] uppercase tracking-[0.4em] flex items-center justify-center transition-all active:scale-[0.96] focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50 select-none overflow-hidden relative group shadow-2xl", // Enhanced touch target and active states
+  LABEL: "text-[10px] font-black text-neutral-500 tracking-[0.3em] uppercase ml-1"
 };
 
 export const Card = React.memo(({ children, className, danger, noPadding }) => (
@@ -24,23 +25,24 @@ export const Card = React.memo(({ children, className, danger, noPadding }) => (
   </div>
 ));
 
-export const Button = React.memo(({ children, onClick, className, variant = 'primary', disabled, size = 'md', style }) => {
+export const Button = React.memo(({ children, onClick, className, variant = 'primary', disabled, size = 'md', style, type = "button" }) => {
   const variants = {
-    primary: "bg-accent text-zinc-950 shadow-[0_0_20px_var(--accent-glow)]",
-    secondary: "bg-white/5 text-inherit border border-white/10 hover:bg-white/10",
-    danger: "bg-danger text-white shadow-[0_0_20px_rgba(248,113,113,0.3)]",
+    primary: "bg-accent text-zinc-950 shadow-[0_0_20px_var(--accent-glow)] hover:brightness-110",
+    secondary: "bg-white/5 text-inherit border border-white/10 hover:bg-white/10 hover:border-white/20",
+    danger: "bg-danger text-white shadow-[0_0_20px_rgba(248,113,113,0.3)] hover:brightness-110",
     ghost: "bg-transparent text-neutral-500 hover:text-white hover:bg-white/5",
     outline: "bg-transparent border-2 border-accent/20 text-inherit hover:border-accent hover:text-accent hover:bg-accent/5"
   };
 
   const sizes = {
-    sm: "h-10 px-4 text-[9px]",
+    sm: "h-11 px-5 text-[9px]", // Boosted from h-10 for 44px+ target
     md: "h-14 px-8 text-[11px]",
     lg: "h-20 px-10 text-[13px]"
   };
 
   return (
     <motion.button
+      type={type}
       whileTap={{ scale: 0.94 }}
       disabled={disabled}
       onClick={onClick}
@@ -52,13 +54,13 @@ export const Button = React.memo(({ children, onClick, className, variant = 'pri
         className
       )}
     >
-      <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 will-change-transform" />
-      <span className="relative z-10 flex items-center">{children}</span>
+      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <span className="relative z-10 flex items-center gap-2">{children}</span>
     </motion.button>
   );
 });
 
-export const Input = React.memo(({ value, onChange, label, type = "text", placeholder, isDark, className }) => (
+export const Input = React.memo(({ value, onChange, label, type = "text", placeholder, isDark, className, required }) => (
   <div className={cn("flex flex-col gap-2 w-full", className)}>
     {label && <span className={cn(UI.LABEL)}>{label}</span>}
     <input
@@ -66,6 +68,7 @@ export const Input = React.memo(({ value, onChange, label, type = "text", placeh
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
+      required={required}
       className={cn(UI.INPUT, !isDark && "bg-black/5 border-black/10 text-zinc-950 focus:bg-black/10")}
     />
   </div>
