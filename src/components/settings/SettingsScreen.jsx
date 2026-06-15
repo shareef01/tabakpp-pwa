@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Check, Plus, ArrowUp, ArrowDown, Crown, Activity, Zap, Edit2, Trash2, Camera, Loader2 } from 'lucide-react';
 import { updateProfile } from 'firebase/auth';
@@ -45,213 +45,182 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const fileInputRef = useRef(null);
 
-  // --- REHACTIVE SYNC: Keep local preview in step with Cloud SSOT ---
-  React.useEffect(() => {
+  // Sync internal previewUrl state when external cloud settings change
+  useEffect(() => {
     setPreviewUrl(settings.avatar || user?.photoURL || null);
   }, [settings.avatar, user?.photoURL]);
 
-  /**
-   * High-Fidelity Profile Upload
-   * Uses Base64 to bypass Storage limitations.
-   */
   const handlePfpUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !user) return;
 
     if (file.size > 500 * 1024) {
-      alert("Image exceeds the 500KB limit for cloud synchronization.");
+      alert("Image too large. Max 500KB.");
       return;
     }
 
     setIsUploading(true);
     const reader = new FileReader();
-
-    reader.onerror = () => {
-      setIsUploading(false);
-      alert("Local file read failed.");
-    };
-
     reader.onload = async (event) => {
-      const base64Data = event.target.result;
-      setPreviewUrl(base64Data);
-
+      const base64 = event.target.result;
+      setPreviewUrl(base64);
       try {
-        console.log("[IDENTITY_SYNC] Handshake started...");
-        // 1. Commit to Firestore (Primary SSOT)
-        await updateDoc(doc(db, 'users', user.uid), { avatar: base64Data });
-
-        // 2. Update Auth Profile (Legacy Redundancy)
-        try {
-          await updateProfile(auth.currentUser, { photoURL: base64Data });
-        } catch (authErr) {
-          console.warn("[IDENTITY_SYNC] Auth profile update failed, but Firestore was successful.", authErr);
-        }
-
-        console.log("[IDENTITY_SYNC] Handshake complete.");
+        await updateDoc(doc(db, 'users', user.uid), { avatar: base64 });
+        await updateProfile(auth.currentUser, { photoURL: base64 });
       } catch (err) {
-        console.error("[IDENTITY_SYNC] FATAL_ERROR:", err);
-        setPreviewUrl(settings.avatar || user?.photoURL || null);
-        alert(`Identity Sync Failure: ${err.message}`);
+        alert("Upload Sync Failed.");
       } finally {
         setIsUploading(false);
       }
     };
-
     reader.readAsDataURL(file);
   };
 
-  /**
-   * Secure Profile Purge
-   */
   const handleRemovePfp = async () => {
     setIsUploading(true);
     try {
-      console.log("[IDENTITY_SYNC] Purging identity assets...");
-      // 1. Nullify Firestore field
       await updateDoc(doc(db, 'users', user.uid), { avatar: null });
-
-      // 2. Nullify Auth profile
-      try {
-        await updateProfile(auth.currentUser, { photoURL: null });
-      } catch (authErr) {
-        console.warn("[IDENTITY_SYNC] Auth profile purge failed.", authErr);
-      }
-
+      await updateProfile(auth.currentUser, { photoURL: null });
       setPreviewUrl(null);
-      console.log("[IDENTITY_SYNC] Assets purged.");
+      setShowRemoveConfirm(false);
     } catch (err) {
-      console.error("[IDENTITY_SYNC] Purge Failure:", err);
-      alert("Purge failed. Verify network connectivity.");
+      alert("Removal Failed.");
     } finally {
       setIsUploading(false);
-      setShowRemoveConfirm(false);
     }
   };
 
-  /**
-   * Profile Metadata Update
-   */
   const handleUpdateProfile = async () => {
     const cleanName = sanitizeString(displayName);
     if (!cleanName) return;
     try {
       await updateProfile(auth.currentUser, { displayName: cleanName });
       await updateDoc(doc(db, 'users', user.uid), { name: cleanName });
-      alert("Identity Securely Updated");
+      alert("Profile Saved.");
     } catch (e) {
-      console.error(e);
-      alert("Update failed.");
+      alert("Update Failed.");
     }
   };
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto px-4 lg:px-8 font-inter">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pb-24">
+
+        {/* LEFT COLUMN: Identity & Appearance */}
         <div className="lg:col-span-5 space-y-8">
-          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl shadow-black/50 relative overflow-hidden">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-8">Display Identity</h3>
-            <div className="flex flex-col items-center gap-8 text-center">
+
+          {/* IDENTITY CARD */}
+          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl relative overflow-hidden">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-10">Display Identity</h3>
+
+            <div className="flex flex-col items-center gap-10">
               <input type="file" ref={fileInputRef} onChange={handlePfpUpload} className="hidden" accept="image/*" />
 
+              {/* Avatar Zone */}
               <div className="relative group">
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="w-32 h-32 rounded-[40px] bg-accent/5 border border-accent/20 flex items-center justify-center shadow-2xl relative overflow-hidden transition-all hover:border-accent/50"
+                  className="w-36 h-32 rounded-[40px] bg-accent/5 border border-accent/20 flex items-center justify-center shadow-2xl relative overflow-hidden transition-all hover:border-accent/40"
                 >
-                  {isUploading ? (
-                    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                  {isUploading && (
+                    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                       <Loader2 className="animate-spin text-accent" size={32} />
                     </div>
-                  ) : null}
-
+                  )}
                   {previewUrl ? (
-                    <img src={previewUrl} alt="Avatar" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                    <img src={previewUrl} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <User size={48} className="text-accent" strokeWidth={2.5} />
+                    <User size={50} className="text-accent" strokeWidth={2.5} />
                   )}
                 </button>
-
                 {!isUploading && (
-                  <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-xl shadow-xl flex items-center justify-center text-zinc-950 pointer-events-none border-4 border-[#0a0a0c]">
-                    <Camera size={16} strokeWidth={3} />
+                  <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-xl shadow-xl flex items-center justify-center text-zinc-950 border-4 border-[#0a0a0c] pointer-events-none">
+                    <Camera size={18} strokeWidth={3} />
                   </div>
                 )}
               </div>
 
-              {/* Action Suite: Explicit Update/Remove */}
+              {/* Action Buttons */}
               <div className="flex gap-4 w-full">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="flex-1 h-14 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-[1000] uppercase tracking-widest hover:bg-white/10 transition-all text-white/60 hover:text-white disabled:opacity-30"
-                >
+                <Button variant="secondary" className="flex-1 h-16 text-[10px]" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                   Update
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    console.log("[IDENTITY_SYNC] Manual Purge Triggered");
-                    if (window.confirm("ARE YOU SURE? This will permanently delete your profile photo from the TABAK++ secure vault.")) {
-                      await handleRemovePfp();
-                    }
-                  }}
-                  disabled={!previewUrl || isUploading}
-                  className="flex-1 h-14 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-[10px] font-[1000] uppercase tracking-widest hover:bg-rose-500/20 transition-all text-rose-500 hover:text-rose-400 disabled:opacity-0"
-                >
+                </Button>
+                <Button variant="danger" className="flex-1 h-16 text-[10px]" onClick={() => setShowRemoveConfirm(true)} disabled={isUploading || !previewUrl}>
                   Remove
-                </button>
+                </Button>
               </div>
 
               <div className="w-full space-y-8 pt-8 border-t border-white/5">
-                <Input label="Display Name" value={displayName} onChange={setDisplayName} isDark />
-                <button
-                  onClick={handleUpdateProfile}
-                  className="w-full h-16 bg-white text-zinc-950 font-[1000] uppercase tracking-[0.4em] rounded-2xl active:scale-[0.98] transition-all text-[11px] shadow-2xl"
-                >
-                  Update Profile
-                </button>
+                <Input label="User Handle" value={displayName} onChange={setDisplayName} isDark />
+                <Button className="w-full h-16" onClick={handleUpdateProfile}>
+                  Apply Changes
+                </Button>
               </div>
             </div>
           </section>
-          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl shadow-black/50">
+
+          {/* APPEARANCE CARD */}
+          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-8">Appearance</h3>
             <div className="space-y-8">
-              <div className="grid grid-cols-3 gap-4">{ACCENTS.map(x => ( <button key={x.v} onClick={() => setLocalAccent(x.v)} className={cn("h-14 rounded-2xl border-2 transition-all duration-300 relative flex items-center justify-center", localAccent === x.v ? "border-white scale-105 shadow-xl" : "border-white/5 opacity-40 hover:opacity-100")} style={{ backgroundColor: x.v }}>{localAccent === x.v && <Check size={20} className="text-white drop-shadow-md" strokeWidth={4} />}</button> ))}</div>
-              <button onClick={() => onUpd({ accent: localAccent })} className="w-full h-16 bg-white/5 border border-white/10 text-white font-[1000] uppercase tracking-[0.4em] rounded-2xl active:scale-[0.98] transition-all text-[11px] hover:bg-white/10">Save Theme</button>
-            </div>
-          </section>
-        </div>
-                <Input label="Display Name" value={n} onChange={setN} isDark />
-                <button
-                  onClick={handleUpdateProfile}
-                  className="w-full h-16 bg-white text-zinc-950 font-[1000] uppercase tracking-[0.4em] rounded-2xl active:scale-[0.98] transition-all text-[11px] shadow-2xl"
-                >
-                  Update Profile
-                </button>
+              <div className="grid grid-cols-3 gap-4">
+                {ACCENTS.map(x => (
+                  <button key={x.v} onClick={() => setLocalAccent(x.v)} className={cn("h-14 rounded-2xl border-2 transition-all relative flex items-center justify-center", localAccent === x.v ? "border-white scale-105 shadow-xl" : "border-white/5 opacity-40 hover:opacity-100")} style={{ backgroundColor: x.v }}>
+                    {localAccent === x.v && <Check size={20} className="text-white" strokeWidth={4} />}
+                  </button>
+                ))}
               </div>
-            </div>
-          </section>
-          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl shadow-black/50">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-8">Appearance</h3>
-            <div className="space-y-8">
-              <div className="grid grid-cols-3 gap-4">{ACCENTS.map(x => ( <button key={x.v} onClick={() => setLa(x.v)} className={cn("h-14 rounded-2xl border-2 transition-all duration-300 relative flex items-center justify-center", la === x.v ? "border-white scale-105 shadow-xl" : "border-white/5 opacity-40 hover:opacity-100")} style={{ backgroundColor: x.v }}>{la === x.v && <Check size={20} className="text-white drop-shadow-md" strokeWidth={4} />}</button> ))}</div>
-              <button onClick={() => onUpd({ accent: la })} className="w-full h-16 bg-white/5 border border-white/10 text-white font-[1000] uppercase tracking-[0.4em] rounded-2xl active:scale-[0.98] transition-all text-[11px] hover:bg-white/10">Save Theme</button>
+              <Button variant="secondary" className="w-full" onClick={() => onUpd({ accent: localAccent })}>
+                Save Global Theme
+              </Button>
             </div>
           </section>
         </div>
+
+        {/* RIGHT COLUMN: Registry Management */}
         <div className="lg:col-span-7 h-full">
-          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl shadow-black/50 min-h-[600px] flex flex-col">
-            <div className="flex items-center justify-between gap-8 mb-10">
-               <div className="space-y-1"><h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Registry Management</h3><span className="text-2xl font-[1000] tracking-tighter uppercase text-white block">Your Counters</span></div>
-               <button onClick={onAdd} className="w-12 h-12 bg-accent text-zinc-950 rounded-xl shadow-xl active:scale-90 transition-all flex items-center justify-center hover:rotate-90"><Plus size={24} strokeWidth={3} /></button>
+          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl min-h-[600px] flex flex-col">
+            <div className="flex items-center justify-between mb-10">
+               <div className="space-y-1">
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Registry Management</h3>
+                 <span className="text-2xl font-[1000] tracking-tighter uppercase text-white block">Active Counters</span>
+               </div>
+               <button onClick={onAdd} className="w-14 h-14 bg-accent text-zinc-950 rounded-2xl shadow-xl active:scale-90 transition-all flex items-center justify-center hover:rotate-90">
+                 <Plus size={28} strokeWidth={3} />
+               </button>
             </div>
-            <div className="space-y-4 flex-1">{configs.length > 0 ? configs.sort((a,b)=>a.order-b.order).map((c, idx) => ( <ProtocolListItem key={c.id} config={c} idx={idx} total={configs.length} onReo={onReo} onEdit={onEditP} onDel={() => onDel(c.id)} /> )) : ( <div className="h-full flex flex-col items-center justify-center py-20 text-neutral-600 space-y-4 border-2 border-dashed border-white/5 rounded-3xl"><Zap size={48} className="opacity-20" /><span className="text-xs font-black uppercase tracking-[0.4em]">No active counters</span></div> )}</div>
-            <div className="mt-10 pt-10 border-t border-white/5"><p className="text-[9px] font-black uppercase tracking-[0.3em] text-neutral-600 text-center leading-relaxed">Changes to counters are synchronized in real-time across all active sessions.</p></div>
+
+            <div className="space-y-4 flex-1">
+              {configs.length > 0 ? configs.sort((a,b)=>a.order-b.order).map((c, idx) => (
+                <ProtocolListItem key={c.id} config={c} idx={idx} total={configs.length} onReo={onReo} onEdit={onEditP} onDel={() => onDel(c.id)} />
+              )) : (
+                <div className="h-full flex flex-col items-center justify-center py-20 text-neutral-600 space-y-4 border-2 border-dashed border-white/5 rounded-[32px]">
+                  <Zap size={48} className="opacity-20" />
+                  <span className="text-xs font-black uppercase tracking-[0.4em]">No active counters</span>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-10 pt-10 border-t border-white/5">
+              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-neutral-600 text-center leading-relaxed">
+                Changes to counters are synchronized in real-time across all active sessions.
+              </p>
+            </div>
           </section>
         </div>
       </div>
+
+      {/* CONFIRMATION OVERLAY */}
+      <ConfirmModal
+        isOpen={showRemoveConfirm}
+        onClose={() => setShowRemoveConfirm(false)}
+        onConfirm={handleRemovePfp}
+        title="Purge Identity?"
+        message="This will permanently delete your profile photo from the secure vault."
+        confirmText="Confirm Purge"
+      />
+
     </motion.div>
   );
 };
