@@ -181,7 +181,10 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
 
               <div className="flex gap-4 w-full">
                 <Button
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => {
+                    console.log("[IDENTITY] Update Triggered");
+                    fileInputRef.current?.click();
+                  }}
                   variant="secondary"
                   disabled={isUploading}
                   className="flex-1 h-14 text-[10px]"
@@ -189,7 +192,10 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
                   Update
                 </Button>
                 <Button
-                  onClick={() => setShowRemoveConfirm(true)}
+                  onClick={() => {
+                    console.log("[IDENTITY] Remove Button Clicked - PreviewURL:", !!previewUrl);
+                    setShowRemoveConfirm(true);
+                  }}
                   disabled={!previewUrl || isUploading}
                   variant="danger"
                   className="flex-1 h-14 text-[10px]"
@@ -198,14 +204,23 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
                 </Button>
               </div>
 
-              <ConfirmModal
-                isOpen={showRemoveConfirm}
-                onClose={() => setShowRemoveConfirm(false)}
-                onConfirm={handleRemovePfp}
-                title="Purge Identity?"
-                message="This will permanently delete your profile picture from the secure registry vault."
-                confirmText="Purge"
-              />
+              {/* Ensure Modal is mounted outside conditional button scope for reliability */}
+              {showRemoveConfirm && (
+                <ConfirmModal
+                  isOpen={showRemoveConfirm}
+                  onClose={() => {
+                    console.log("[IDENTITY] Confirm Modal Closed");
+                    setShowRemoveConfirm(false);
+                  }}
+                  onConfirm={() => {
+                    console.log("[IDENTITY] Purge Confirmed");
+                    handleRemovePfp();
+                  }}
+                  title="Purge Identity?"
+                  message="This will permanently delete your profile picture from the secure registry vault."
+                  confirmText="Purge"
+                />
+              )}
 
               <div className="w-full space-y-8 pt-8 border-t border-white/5">
                 <Input label="Display Name" value={displayName} onChange={setDisplayName} isDark />
