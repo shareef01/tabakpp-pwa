@@ -4,35 +4,33 @@ import { AlertCircle } from 'lucide-react';
 import { Button, Card } from '../Common';
 
 /**
- * High-Fidelity Confirmation Modal
- * Custom Obsidian Glass design for critical user actions.
- * Optimized for Z-index priority and Backdrop-Blur.
+ * Obsidian Confirm Modal
+ * Highest priority Z-index and backdrop blur to override native behaviors.
  */
 export const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Confirm", danger = true }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-6">
-          {/* Backdrop with extreme blur to focus the user */}
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 isolate">
+          {/* Obsidian Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/80 backdrop-blur-2xl"
+            className="absolute inset-0 bg-[#020202]/90 backdrop-blur-2xl"
           />
 
-          {/* Modal Container */}
+          {/* Modal Architecture */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 400 }}
-            className="relative w-full max-w-sm z-[1000]"
+            className="relative w-full max-w-sm z-[10000]"
           >
-            <Card className="p-8 border-white/10 overflow-hidden" danger={danger}>
+            <Card className="p-8 border-white/10 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)]" danger={danger}>
               <div className="flex flex-col items-center text-center space-y-6">
-                {/* Visual Icon Header */}
                 <div className={`p-4 rounded-[24px] ${danger ? 'bg-danger/10 text-danger border border-danger/20' : 'bg-accent/10 text-accent border border-accent/20'}`}>
                   <AlertCircle size={32} strokeWidth={2.5} />
                 </div>

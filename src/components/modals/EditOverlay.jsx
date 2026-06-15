@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Check, Plus, Minus } from 'lucide-react';
+import { X, Check, Plus, Minus, Database } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { UI } from '../Common';
+import { UI, Button } from '../Common';
 import { cn } from '../../utils/utils';
 
 export const EditOverlay = ({ log, configs, onClose, user }) => {
@@ -14,7 +14,7 @@ export const EditOverlay = ({ log, configs, onClose, user }) => {
       await updateDoc(doc(db, 'users', user.uid, 'logs', log.logDate), { counts });
       onClose();
     } catch (e) {
-      alert(e.message);
+      alert("Override failed.");
     }
   };
 
@@ -26,56 +26,70 @@ export const EditOverlay = ({ log, configs, onClose, user }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/80 backdrop-blur-2xl font-inter overflow-y-auto">
+    <div className="fixed inset-0 z-[5000] flex items-center justify-center p-6 isolate">
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-[#020202]/90 backdrop-blur-2xl"
+      />
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-[#121318] border border-white/10 rounded-[48px] w-full max-w-[500px] p-10 lg:p-12 shadow-2xl relative"
+        className="bg-[#0a0a0c] border border-white/5 rounded-[48px] w-full max-w-[500px] p-8 lg:p-12 shadow-[0_0_80px_rgba(0,0,0,0.9)] relative overflow-hidden"
       >
         <div className="flex justify-between items-center mb-10">
           <div className="space-y-1">
-            <h3 className="text-2xl font-[1000] tracking-tighter uppercase text-white">Adjust Registry</h3>
-            <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest block">
-              Entry for {new Date(log.logDate).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'}).toUpperCase()}
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">History Override</h3>
+            <span className="text-2xl font-[1000] tracking-tighter uppercase text-white block leading-none">
+              {new Date(log.logDate).toLocaleDateString(undefined, {month:'short', day:'numeric'}).toUpperCase()}
             </span>
           </div>
-          <button onClick={onClose} className="p-3 rounded-full hover:bg-white/5 transition-all text-neutral-500 hover:text-white">
-            <X size={24} />
+          <button onClick={onClose} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-neutral-500 hover:text-white transition-all">
+            <X size={20} strokeWidth={3} />
           </button>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
           {configs.map(c => (
-            <div key={c.id} className="flex items-center justify-between p-5 bg-white/[0.02] border border-white/5 rounded-2xl">
-              <span className="text-sm font-bold text-white uppercase tracking-tight">{c.name}</span>
-              <div className="flex items-center gap-4">
+            <div key={c.id} className="flex items-center justify-between p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:border-white/10 transition-colors">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-black text-white uppercase tracking-wider">{c.name}</span>
+                <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">Protocol {c.id.slice(0,4)}</span>
+              </div>
+              <div className="flex items-center gap-4 bg-black/40 p-1.5 rounded-xl border border-white/5">
                 <button
                   onClick={() => adjust(c.id, -1)}
-                  className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-neutral-500 hover:text-white transition-all"
+                  className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-neutral-500 hover:text-white transition-all active:scale-90"
                 >
                   <Minus size={16} strokeWidth={3} />
                 </button>
-                <span className="text-xl font-[1000] tabular-nums text-white w-8 text-center">
+                <span className="text-xl font-[1000] tabular-nums text-white w-10 text-center">
                   {counts[c.id] || 0}
                 </span>
                 <button
                   onClick={() => adjust(c.id, 1)}
-                  className="w-10 h-10 rounded-lg bg-accent text-zinc-950 flex items-center justify-center transition-all"
+                  className="w-10 h-10 rounded-lg bg-accent text-zinc-950 flex items-center justify-center transition-all active:scale-90"
                 >
                   <Plus size={16} strokeWidth={4} />
                 </button>
               </div>
             </div>
           ))}
+        </div>
 
-          <button
+        <div className="mt-10">
+          <Button
             onClick={handleApply}
-            className="w-full h-18 bg-white text-zinc-950 font-[1000] uppercase tracking-[0.4em] rounded-2xl shadow-2xl active:scale-[0.98] transition-all text-[11px] mt-6 flex items-center justify-center gap-3"
+            className="w-full h-18 text-[11px]"
           >
-            <Check size={18} strokeWidth={3} />
+            <Database size={16} className="mr-3" strokeWidth={3} />
             Commit Overrides
-          </button>
+          </Button>
         </div>
       </motion.div>
     </div>
