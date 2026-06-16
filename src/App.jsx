@@ -38,7 +38,7 @@ const HistoryScreen = lazyWithRetry(() => import('./components/history/HistorySc
 const SettingsScreen = lazyWithRetry(() => import('./components/settings/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 
 // --- GLOBAL CONSTANTS ---
-const APP_VERSION = "BETA-29.8.3";
+const APP_VERSION = "BETA-29.8.5-STABLE";
 
 // --- GLOBAL COMPONENTS ---
 
@@ -84,15 +84,19 @@ class GlobalErrorBoundary extends React.Component {
 const AppContent = () => {
   const { user, loading: authLoading } = useAuth();
 
-  // --- AUTO-REFRESH: Detect new build and force browser update ---
+  // --- ARCHITECTURAL CACHE BUSTING: Force hard reload if version mismatch detected ---
   useEffect(() => {
-    const lastBuild = localStorage.getItem('tabak_last_build');
-    const currentBuild = String(typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : Date.now());
-    if (lastBuild && lastBuild !== currentBuild) {
-      localStorage.setItem('tabak_last_build', currentBuild);
-      window.location.reload(true);
+    const localBuildId = localStorage.getItem('tabak_build_id');
+    const serverBuildId = String(typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : 'initial');
+
+    console.log(`[SYS] V:${APP_VERSION} | B:${serverBuildId}`);
+
+    if (localBuildId && localBuildId !== serverBuildId) {
+      console.warn("[SYS] STALE_BUILD_DETECTED: Force-synchronizing UI...");
+      localStorage.setItem('tabak_build_id', serverBuildId);
+      window.location.replace(window.location.origin + '?v=' + serverBuildId);
     } else {
-      localStorage.setItem('tabak_last_build', currentBuild);
+      localStorage.setItem('tabak_build_id', serverBuildId);
     }
   }, []);
 

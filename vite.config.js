@@ -1,21 +1,23 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const BUILD_ID = Date.now();
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   define: {
-    // Inject a unique build timestamp to force UI updates
-    __BUILD_TIME__: JSON.stringify(Date.now()),
+    __BUILD_TIME__: JSON.stringify(BUILD_ID),
   },
   build: {
     manifest: true,
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
-        // Break cache by including timestamp in every asset name
-        entryFileNames: `assets/[name].[hash].${Date.now()}.js`,
-        chunkFileNames: `assets/[name].[hash].${Date.now()}.js`,
-        assetFileNames: `assets/[name].[hash].${Date.now()}.[ext]`
+        // Enforce unique names for all assets to bust CDN and Browser caches
+        entryFileNames: `assets/[name].${BUILD_ID}.js`,
+        chunkFileNames: `assets/[name].[hash].${BUILD_ID}.js`,
+        assetFileNames: `assets/[name].[hash].${BUILD_ID}.[ext]`
       }
     }
   }
