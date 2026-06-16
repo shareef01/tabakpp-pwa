@@ -38,7 +38,7 @@ const HistoryScreen = lazyWithRetry(() => import('./components/history/HistorySc
 const SettingsScreen = lazyWithRetry(() => import('./components/settings/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 
 // --- GLOBAL CONSTANTS ---
-const APP_VERSION = "BETA-29.8.5-STABLE";
+const APP_VERSION = "BETA-29.8.8-FORCED";
 
 // --- GLOBAL COMPONENTS ---
 
