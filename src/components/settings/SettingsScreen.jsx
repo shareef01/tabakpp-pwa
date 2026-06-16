@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Check, Plus, ArrowUp, ArrowDown, Crown, Activity, Zap, Edit2, Trash2, Camera, Loader2 } from 'lucide-react';
+import { User, Check, Plus, ArrowUp, ArrowDown, Crown, Activity, Zap, Edit2, Trash2, Camera, Loader2, Coins } from 'lucide-react';
 import { updateProfile } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
@@ -49,6 +49,10 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
   useEffect(() => {
     setPreviewUrl(settings.avatar || user?.photoURL || null);
   }, [settings.avatar, user?.photoURL]);
+
+  useEffect(() => {
+    setUnitPrice(settings.unitPrice || 0.5);
+  }, [settings.unitPrice]);
 
   const handlePfpUpload = async (e) => {
     const file = e.target.files[0];
@@ -143,7 +147,12 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
                 <Button variant="secondary" className="flex-1 h-16 text-[10px]" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                   Update
                 </Button>
-                <Button variant="danger" className="flex-1 h-16 text-[10px]" onClick={() => setShowRemoveConfirm(true)} disabled={isUploading || !previewUrl}>
+                <Button
+                  variant="danger"
+                  className="flex-1 h-16 text-[10px]"
+                  onClick={() => setShowRemoveConfirm(true)}
+                  disabled={isUploading || !previewUrl}
+                >
                   Remove
                 </Button>
               </div>
@@ -172,28 +181,10 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
               </Button>
             </div>
           </section>
-
-          {/* FINANCIAL CALIBRATION CARD */}
-          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-8">Financial Calibration</h3>
-            <div className="space-y-8">
-              <Input
-                label="Price per unit ($)"
-                type="number"
-                value={unitPrice}
-                onChange={setUnitPrice}
-                isDark
-                placeholder="0.50"
-              />
-              <Button variant="secondary" className="w-full h-16 text-[10px]" onClick={() => onUpd({ unitPrice: parseFloat(unitPrice) })}>
-                Save Economics
-              </Button>
-            </div>
-          </section>
         </div>
 
-        <div className="lg:col-span-7 h-full">
-          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl min-h-[600px] flex flex-col">
+        <div className="lg:col-span-7 space-y-8 h-full">
+          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl min-h-[500px] flex flex-col">
             <div className="flex items-center justify-between mb-10">
                <div className="space-y-1">
                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Registry Protocols</h3>
@@ -216,9 +207,18 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
             </div>
           </section>
 
-          {/* FINANCIAL CALIBRATION CARD */}
+          {/* FINANCIAL CALIBRATION CARD - Single Instance */}
           <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-8">Financial Calibration</h3>
+            <div className="flex items-center gap-4 mb-8 text-emerald-400">
+               <div className="p-3 rounded-2xl bg-emerald-400/10 border border-emerald-400/20">
+                 <Coins size={24} strokeWidth={2.5} />
+               </div>
+               <div className="space-y-1">
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Economics</h3>
+                 <span className="text-xl font-[1000] tracking-tighter uppercase text-white block leading-none">Financial Calibration</span>
+               </div>
+            </div>
+
             <div className="space-y-8">
               <Input
                 label="Price per unit ($)"
@@ -229,7 +229,7 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
                 placeholder="0.50"
               />
               <Button variant="secondary" className="w-full h-16 text-[10px]" onClick={() => onUpd({ unitPrice: parseFloat(unitPrice) })}>
-                Save Economics
+                Save Economic Profile
               </Button>
             </div>
           </section>
