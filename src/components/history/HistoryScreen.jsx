@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, TrendingUp, Wallet, Activity, Edit2, Trash2 } from 'lucide-react';
+import { BarChart3, TrendingUp, Wallet, Activity, Edit2, Trash2, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { db } from '../../firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
@@ -18,9 +18,9 @@ const InsightCard = React.memo(({ icon: Icon, label, val, sub, color, onInfo }) 
   <div className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 p-6 rounded-2xl flex flex-col items-center justify-center text-center shadow-lg transition-all hover:border-white/10 group h-full relative overflow-hidden">
      <button
        onClick={onInfo}
-       className="absolute top-4 right-4 p-2 rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-all z-10"
+       className="absolute top-3 right-3 w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center text-neutral-500 hover:text-white hover:bg-white/10 transition-all z-20"
      >
-       <Info size={16} strokeWidth={2.5} />
+       <Info size={14} strokeWidth={2.5} />
      </button>
 
      <div className={cn("p-3 rounded-xl bg-white/5 mb-4 shadow-inner border border-white/10 group-hover:scale-110 transition-transform duration-500", color)}>

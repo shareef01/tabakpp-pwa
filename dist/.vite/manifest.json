@@ -1,0 +1,72 @@
+{
+  "_ConfirmModal-prL55jS3-1781571457593.js": {
+    "file": "assets/ConfirmModal-prL55jS3-1781571457593.js",
+    "name": "ConfirmModal",
+    "imports": [
+      "index.html"
+    ]
+  },
+  "index.html": {
+    "file": "assets/index-BjznsdQG-1781571457593.js",
+    "name": "index",
+    "src": "index.html",
+    "isEntry": true,
+    "dynamicImports": [
+      "src/components/auth/AuthScreen.jsx",
+      "src/components/dashboard/TrackerCard.jsx",
+      "src/components/dashboard/MetricBanner.jsx",
+      "src/components/history/HistoryScreen.jsx",
+      "src/components/settings/SettingsScreen.jsx"
+    ],
+    "css": [
+      "assets/index-CMIUx9U9-1781571457593.css"
+    ]
+  },
+  "src/components/auth/AuthScreen.jsx": {
+    "file": "assets/AuthScreen-C6Up_bly-1781571457593.js",
+    "name": "AuthScreen",
+    "src": "src/components/auth/AuthScreen.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/components/dashboard/MetricBanner.jsx": {
+    "file": "assets/MetricBanner-CWsdKs-u-1781571457593.js",
+    "name": "MetricBanner",
+    "src": "src/components/dashboard/MetricBanner.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/components/dashboard/TrackerCard.jsx": {
+    "file": "assets/TrackerCard-9krFpOKg-1781571457593.js",
+    "name": "TrackerCard",
+    "src": "src/components/dashboard/TrackerCard.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ]
+  },
+  "src/components/history/HistoryScreen.jsx": {
+    "file": "assets/HistoryScreen-odyE-N-g-1781571457593.js",
+    "name": "HistoryScreen",
+    "src": "src/components/history/HistoryScreen.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_ConfirmModal-prL55jS3-1781571457593.js"
+    ]
+  },
+  "src/components/settings/SettingsScreen.jsx": {
+    "file": "assets/SettingsScreen-D_kFrEvj-1781571457593.js",
+    "name": "SettingsScreen",
+    "src": "src/components/settings/SettingsScreen.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html",
+      "_ConfirmModal-prL55jS3-1781571457593.js"
+    ]
+  }
+}
