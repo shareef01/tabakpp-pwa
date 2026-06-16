@@ -1,23 +1,31 @@
 /**
- * TABAK++ AppSec Utilities
- * Provides XSS protection and input sanitization for user-generated content.
+ * TABAK++ High-Fidelity AppSec Utilities
+ * Enforcing strict sanitization and validation for full-stack data integrity.
  */
 
-export const sanitizeString = (str) => {
+/**
+ * Sanitizes user-generated strings to prevent XSS and NoSQL injection patterns.
+ * @param {string} str - Raw input
+ * @returns {string} Sanitized output
+ */
+export const sanitizeInput = (str) => {
   if (typeof str !== 'string') return '';
   return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-    .trim();
+    .replace(/[<>]/g, '') // Strips HTML tags
+    .replace(/\$/g, '﹩') // Neutralizes NoSQL operator characters
+    .trim()
+    .substring(0, 100); // Enforce reasonable length limits
 };
 
-export const validateEmail = (email) => {
-  return String(email)
-    .toLowerCase()
-    .match(
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-    );
+/**
+ * Validates numeric inputs to ensure they are within safe architectural bounds.
+ * @param {number|string} val - Raw value
+ * @param {number} min - Minimum allowed
+ * @param {number} max - Maximum allowed
+ * @returns {number} Validated number
+ */
+export const validateNumeric = (val, min = 0, max = 1000) => {
+  const n = typeof val === 'number' ? val : parseFloat(val);
+  if (isNaN(n)) return min;
+  return Math.min(Math.max(n, min), max);
 };

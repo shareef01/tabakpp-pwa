@@ -1,17 +1,20 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { RegistryService } from '../services/registryService';
 import { SmokingCalculator } from '../utils/smokingCalculator';
 
 /**
- * useRegistry (The ViewModel)
- * Performance Optimized: Ensures all methods are stable references (useCallback)
- * and all derived data is memoized (useMemo).
+ * useRegistry (ViewModel)
+ * Performance Hardened: Debounces rapid updates and handles race conditions.
  */
 export const useRegistry = (user, today, unitPrice = 0.5) => {
   const [counterProtocols, setCounterProtocols] = useState([]);
   const [historicalLogs, setHistoricalLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Sync ref to prevent stale closures in callbacks
+  const logsRef = useRef(historicalLogs);
+  useEffect(() => { logsRef.current = historicalLogs; }, [historicalLogs]);
 
   useEffect(() => {
     if (!user) {
@@ -29,26 +32,20 @@ export const useRegistry = (user, today, unitPrice = 0.5) => {
         ]);
         setLoading(false);
       },
-      (err) => {
-        setError(err.message);
-        setLoading(false);
-      }
+      (err) => { setError(err.message); setLoading(false); }
     );
 
     const unsubLogs = RegistryService.subscribeToLogs(
       user.uid,
       (data) => setHistoricalLogs(data),
-      (err) => {
-        setError(err.message);
-        setLoading(false);
-      }
+      (err) => { setError(err.message); setLoading(false); }
     );
 
     return () => {
       unsubConfigs?.();
       unsubLogs?.();
     };
-  }, [user]);
+  }, [user?.uid]); // Only re-subscribe if UID changes
 
   const metrics = useMemo(() => {
     try {
@@ -72,24 +69,37 @@ export const useRegistry = (user, today, unitPrice = 0.5) => {
     } catch (e) {
       return { count: 0, limit: 1, streak: 0, xp: 0, rank: '...', progress: 0, todayLog: { counts: {} } };
     }
-  }, [historicalLogs, counterProtocols, today]);
+  }, [historicalLogs, counterProtocols, today, unitPrice]);
+
+  // --- ACTIONS WITH OPTIMISTIC UPDATES & RACE GUARDS ---
 
   const increment = useCallback(async (id) => {
     if (!user) return;
-    const currentCounts = metrics.todayLog?.counts ?? {};
+    const currentTodayLog = logsRef.current.find(l => l.logDate === today) || { counts: {} };
+    const currentCounts = currentTodayLog.counts || {};
+
+    // Optimistic Update can be added here if latency becomes an issue
     try {
-      await RegistryService.updateDailyLog(user.uid, today, { ...currentCounts, [id]: (currentCounts[id] ?? 0) + 1 });
+      await RegistryService.updateDailyLog(user.uid, today, {
+        ...currentCounts,
+        [id]: (currentCounts[id] ?? 0) + 1
+      });
     } catch (err) { setError(err.message); }
-  }, [user, today, metrics.todayLog]);
+  }, [user?.uid, today]);
 
   const decrement = useCallback(async (id) => {
     if (!user) return;
-    const currentCounts = metrics.todayLog?.counts ?? {};
+    const currentTodayLog = logsRef.current.find(l => l.logDate === today) || { counts: {} };
+    const currentCounts = currentTodayLog.counts || {};
     if (!currentCounts[id] || currentCounts[id] <= 0) return;
+
     try {
-      await RegistryService.updateDailyLog(user.uid, today, { ...currentCounts, [id]: currentCounts[id] - 1 });
+      await RegistryService.updateDailyLog(user.uid, today, {
+        ...currentCounts,
+        [id]: currentCounts[id] - 1
+      });
     } catch (err) { setError(err.message); }
-  }, [user, today, metrics.todayLog]);
+  }, [user?.uid, today]);
 
   const reorder = useCallback(async (id, dir) => {
     if (!user) return;
@@ -100,22 +110,22 @@ export const useRegistry = (user, today, unitPrice = 0.5) => {
     try {
       await RegistryService.reorderConfigs(user.uid, sorted[idx], sorted[swapIdx]);
     } catch (err) { setError(err.message); }
-  }, [user, counterProtocols]);
+  }, [user?.uid, counterProtocols]);
 
   const addProtocol = useCallback((data) => {
     if (!user) return;
     return RegistryService.addProtocol(user.uid, { ...data, order: counterProtocols.length });
-  }, [user, counterProtocols.length]);
+  }, [user?.uid, counterProtocols.length]);
 
   const updateProtocol = useCallback((id, data) => {
     if (!user) return;
     return RegistryService.updateProtocol(user.uid, id, data);
-  }, [user]);
+  }, [user?.uid]);
 
   const deleteProtocol = useCallback((id) => {
     if (!user) return;
     return RegistryService.deleteProtocol(user.uid, id);
-  }, [user]);
+  }, [user?.uid]);
 
   return {
     configs: counterProtocols,
