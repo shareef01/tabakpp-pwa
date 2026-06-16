@@ -1,112 +1,91 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { HeartPulse } from 'lucide-react';
 import { cn } from '../../utils/utils';
 
 /**
- * High-Fidelity Cigarette Gauges
- * Reverted to width-based logic for specific visual behavior.
- * Optimized with transition-all for smooth layout-based animations.
+ * RYO_ROLL Visualization
+ * A specialized gauge for rolled cigarettes.
  */
-export const SmokingProgress = React.memo(({ count, limit, variant, size = 'LARGE' }) => {
-  const isL = count >= limit;
-  const tobaccoPct = Math.max(0, 1 - (count / limit));
-  const isJoint = variant === 'KING' || variant === 'QUEEN';
-  const isSmall = size === 'SMALL';
-  const isMedium = size === 'MEDIUM';
+export const RyoRollProgress = React.memo(({ count, limit, size }) => {
+  const progress = Math.min(1, count / (limit || 1));
+  const isLarge = size === 'LARGE';
 
   return (
-    <div className={cn(
-      "relative rounded-full overflow-hidden border-2 transition-all duration-1000 flex items-center shadow-2xl",
-      isSmall ? "h-8 w-40" : (isMedium ? "h-9 w-48" : "h-11 w-56"),
-      variant === 'KING' && "w-64",
-      variant === 'QUEEN' && "w-52",
-      isL ? "bg-danger border-danger shadow-[0_0_50px_rgba(255,0,0,0.6)]" : "bg-white/[0.03] border-white/10"
-    )}>
-      {!isL && (
-        <div
-          className={cn(
-            "absolute h-full transition-all duration-1000 ease-out",
-            isJoint ? "bg-gradient-to-r from-white/80 to-white" : "bg-white shadow-[0_0_20px_white]"
-          )}
-          style={{ width: `${tobaccoPct * 72}%`, right: '28%' }}
+    <div className={cn("relative flex items-center justify-center", isLarge ? "w-40 h-8" : "w-32 h-6")}>
+      <div className="absolute inset-0 bg-neutral-800/40 rounded-full border border-white/5 overflow-hidden">
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: progress }}
+          className="h-full bg-accent origin-left rounded-full shadow-[0_0_15px_var(--accent)] opacity-80"
+          transition={{ type: 'spring', damping: 20 }}
         />
-      )}
-      {!isL && count > 0 && (
-        <div
-          className="absolute h-full w-3 bg-danger shadow-[0_0_25px_red] z-20 transition-all duration-1000 ease-out"
-          style={{ right: `calc(28% + ${tobaccoPct * 72}% - 1.5px)` }}
-        />
-      )}
-      <div className={cn(
-        "absolute right-0 h-full w-[28%] border-l-2 transition-all duration-1000",
-        isL ? "bg-danger border-white/20" : (isJoint ? "bg-[#2a2a2e] border-white/5" : "bg-[#f59e0b] border-black/20")
-      )} />
+      </div>
+      <div className="absolute -right-2 w-4 h-full bg-amber-600/40 rounded-r-full blur-[2px]" />
     </div>
   );
 });
 
-/**
- * Performance Optimized Circular Gauge
- */
-export const RingProgress = React.memo(({ count, limit, size = 'LARGE' }) => {
-  const isL = count >= limit;
-  const progress = Math.min(1, count / limit);
-  const isSmall = size === 'SMALL';
-  const isMedium = size === 'MEDIUM';
+export const SmokingProgress = React.memo(({ count, limit, variant, size }) => {
+  const progress = Math.min(1, count / (limit || 1));
+  const isLarge = size === 'LARGE';
+
+  const colors = {
+    CIGARETTE: 'bg-white',
+    KING: 'bg-gradient-to-r from-neutral-200 to-white',
+    QUEEN: 'bg-gradient-to-r from-white to-neutral-200'
+  };
 
   return (
-    <div className={cn(
-      "relative flex items-center justify-center shadow-2xl rounded-full transition-all duration-500 will-change-transform",
-      isSmall ? "w-20 h-20" : (isMedium ? "w-24 h-24" : "w-32 h-32")
-    )}>
-      <svg className="absolute inset-0 w-full h-full -rotate-90 overflow-visible p-1.5" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="42" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-white/[0.03]" />
+    <div className={cn("relative flex items-center", isLarge ? "w-48 h-10" : "w-36 h-8")}>
+      <div className="flex-1 h-full bg-neutral-800/40 rounded-l-2xl rounded-r-3xl border border-white/5 overflow-hidden flex relative">
+        <motion.div
+          initial={{ width: '0%' }}
+          animate={{ width: `${progress * 100}%` }}
+          className={cn("h-full origin-left", colors[variant] || colors.CIGARETTE)}
+          transition={{ type: 'spring', damping: 25 }}
+        />
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-amber-500 rounded-r-3xl shadow-inner border-l border-black/10" />
+      </div>
+    </div>
+  );
+});
+
+export const RingProgress = React.memo(({ count, limit, size }) => {
+  const progress = Math.min(1, count / (limit || 1));
+  const radius = 30;
+  const circum = 2 * Math.PI * radius;
+  const isLarge = size === 'LARGE';
+
+  return (
+    <div className={cn("relative flex items-center justify-center", isLarge ? "w-24 h-24" : "w-16 h-16")}>
+      <svg className="w-full h-full -rotate-90">
+        <circle cx="50%" cy="50%" r={radius} className="fill-none stroke-white/5" strokeWidth="6" />
         <motion.circle
-          cx="50" cy="50" r="42"
-          stroke="currentColor"
-          strokeWidth="10"
-          fill="transparent"
-          strokeDasharray="264"
-          initial={{ strokeDashoffset: 264 }}
-          animate={{ strokeDashoffset: 264 - (progress * 264) }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className={cn("transition-colors duration-1000 will-change-[stroke-dashoffset]", isL ? "text-danger" : "text-accent")}
+          cx="50%" cy="50%" r={radius}
+          className="fill-none stroke-accent drop-shadow-[0_0_8px_var(--accent)]"
+          strokeWidth="6"
           strokeLinecap="round"
+          initial={{ strokeDasharray: circum, strokeDashoffset: circum }}
+          animate={{ strokeDashoffset: circum - (progress * circum) }}
+          transition={{ duration: 1, ease: "easeOut" }}
         />
       </svg>
-      <HeartPulse
-        size={isSmall ? 16 : (isMedium ? 20 : 24)}
-        className={cn("transition-all duration-1000 will-change-transform", isL ? "text-danger scale-110" : "text-accent animate-pulse")}
-      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-2 h-2 rounded-full bg-accent animate-pulse shadow-[0_0_10px_var(--accent)]" />
+      </div>
     </div>
   );
 });
 
-/**
- * Performance Optimized Linear Bar
- */
-export const GenericBarProgress = React.memo(({ count, limit, size = 'LARGE' }) => {
-  const isL = count >= limit;
-  const progress = Math.min(1, count / limit);
-  const isSmall = size === 'SMALL';
-  const isMedium = size === 'MEDIUM';
-
+export const GenericBarProgress = React.memo(({ count, limit, size }) => {
+  const progress = Math.min(1, count / (limit || 1));
   return (
-    <div className={cn(
-      "rounded-full overflow-hidden border-2 p-1.5 transition-all duration-1000 shadow-2xl will-change-[background-color,border-color]",
-      isSmall ? "h-9 w-40" : (isMedium ? "h-10 w-48" : "h-11 w-56"),
-      isL ? "bg-danger/20 border-danger" : "bg-white/[0.03] border-white/10"
-    )}>
+    <div className="w-full max-w-[200px] h-3 bg-neutral-800/40 rounded-full border border-white/5 overflow-hidden">
       <motion.div
-        initial={false}
+        initial={{ scaleX: 0 }}
         animate={{ scaleX: progress }}
-        transition={{ duration: 1, ease: "easeOut" }}
-        className={cn(
-          "h-full rounded-full origin-left will-change-transform transition-colors duration-1000",
-          isL ? "bg-danger shadow-[0_0_30px_red]" : "bg-accent shadow-[0_0_20px_var(--accent)]"
-        )}
-        style={{ width: '100%' }}
+        className="h-full bg-accent origin-left rounded-full"
+        transition={{ type: 'spring', damping: 20 }}
       />
     </div>
   );

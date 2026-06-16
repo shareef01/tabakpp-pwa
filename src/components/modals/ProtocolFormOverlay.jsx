@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Check, Activity, Zap, Crown, BarChart2, Cigarette } from 'lucide-react';
+import { X, Check, Activity, Zap, Crown, BarChart2, Cigarette, Wind } from 'lucide-react';
 import { Input, UI, Button } from '../Common';
 import { cn } from '../../utils/utils';
 
@@ -10,7 +10,8 @@ export const ProtocolFormOverlay = ({ isOpen, onClose, onApply, title, initialDa
   const [type, setType] = useState(initialData?.type || 'CIGARETTE');
 
   const TYPES = [
-    { id: 'CIGARETTE', label: 'Cigarette', icon: Cigarette },
+    { id: 'CIGARETTE', label: 'Schachtel', icon: Cigarette },
+    { id: 'RYO_ROLL', label: 'Tabak Beutel', icon: Wind },
     { id: 'SIMPLE', label: 'Simple Ring', icon: Activity },
     { id: 'JOINT_KING', label: 'King Joint', icon: Crown },
     { id: 'JOINT_QUEEN', label: 'Queen Joint', icon: Crown },
@@ -37,7 +38,7 @@ export const ProtocolFormOverlay = ({ isOpen, onClose, onApply, title, initialDa
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-[#0a0a0c] border border-white/5 rounded-[48px] w-full max-w-[500px] p-8 lg:p-12 shadow-[0_0_80px_rgba(0,0,0,0.9)] relative overflow-hidden"
+        className="bg-[#0a0a0c] border border-white/5 rounded-[48px] w-full max-w-[500px] p-8 lg:p-12 shadow-[0_0_80px_rgba(0,0,0,0.9)] relative overflow-hidden overflow-y-auto max-h-[90vh]"
       >
         <div className="flex justify-between items-center mb-10">
           <div className="space-y-1">

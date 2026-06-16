@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Minus } from 'lucide-react';
 import { cn } from '../../utils/utils';
-import { SmokingProgress, RingProgress, GenericBarProgress } from '../gauges/Gauges';
+import { SmokingProgress, RingProgress, GenericBarProgress, RyoRollProgress } from '../gauges/Gauges';
 import { UI } from '../Common';
 
 /**
@@ -45,10 +45,11 @@ export const TrackerCard = React.memo(({ config, count, onInc, onDec, index, glo
           isLarge ? "h-32" : (isMedium ? "h-24" : "h-16")
         )}>
           {config?.type === 'CIGARETTE' && <SmokingProgress count={count} limit={config.limit} variant="CIGARETTE" size={globalSize} />}
+          {config?.type === 'RYO_ROLL' && <RyoRollProgress count={count} limit={config.limit} size={globalSize} />}
           {config?.type === 'SIMPLE' && <RingProgress count={count} limit={config.limit} size={globalSize} />}
           {config?.type === 'JOINT_KING' && <SmokingProgress count={count} limit={config.limit} variant="KING" size={globalSize} />}
           {config?.type === 'JOINT_QUEEN' && <SmokingProgress count={count} limit={config.limit} variant="QUEEN" size={globalSize} />}
-          {(!['CIGARETTE', 'SIMPLE', 'JOINT_KING', 'JOINT_QUEEN'].includes(config?.type)) && <GenericBarProgress count={count} limit={config?.limit} size={globalSize} />}
+          {(!['CIGARETTE', 'RYO_ROLL', 'SIMPLE', 'JOINT_KING', 'JOINT_QUEEN'].includes(config?.type)) && <GenericBarProgress count={count} limit={config?.limit} size={globalSize} />}
         </div>
 
         <div className="flex flex-col items-center text-center space-y-1">
