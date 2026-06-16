@@ -7,7 +7,7 @@ import { SmokingCalculator } from '../utils/smokingCalculator';
  * Performance Optimized: Ensures all methods are stable references (useCallback)
  * and all derived data is memoized (useMemo).
  */
-export const useRegistry = (user, today) => {
+export const useRegistry = (user, today, unitPrice = 0.5) => {
   const [counterProtocols, setCounterProtocols] = useState([]);
   const [historicalLogs, setHistoricalLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +65,7 @@ export const useRegistry = (user, today) => {
         xp: totalXP,
         rank: SmokingCalculator.getRank(totalXP),
         progress: totalLimit > 0 ? totalCount / totalLimit : 0,
-        savings: SmokingCalculator.calculateSavings(historicalLogs, counterProtocols, 0.5) ?? 0,
+        savings: SmokingCalculator.calculateSavings(historicalLogs, counterProtocols, unitPrice) ?? 0,
         lost: SmokingCalculator.calculateLifeLostMinutes(historicalLogs, counterProtocols) ?? 0,
         todayLog
       };

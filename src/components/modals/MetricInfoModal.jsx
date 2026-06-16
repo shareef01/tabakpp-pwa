@@ -19,7 +19,7 @@ const METRIC_DETAILS = {
     color: "text-emerald-400",
     bg: "bg-emerald-400/10",
     border: "border-emerald-400/20",
-    desc: "The total monetary value preserved by avoiding cigarette units. Based on an estimated $0.50 per unit cost.",
+    desc: "The total monetary value preserved by avoiding cigarette units. Based on your personalized unit cost defined in Settings.",
     formula: "Σ (Cigarette Limit - Cigarette Count) × Unit Price"
   },
   health: {

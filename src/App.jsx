@@ -83,11 +83,12 @@ const AppContent = () => {
   const [settings, setSettings] = useState({
     accent: localStorage.getItem('tabak_accent') || '#D4FF32',
     widgetSize: 'LARGE',
-    avatar: null
+    avatar: null,
+    unitPrice: 0.5
   });
   const [isHydrated, setIsHydrated] = useState(false);
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const registry = useRegistry(user, today);
+  const registry = useRegistry(user, today, settings.unitPrice);
 
   const {
     configs, logs, metrics, loading: registryLoading, error: registryError,
@@ -120,7 +121,8 @@ const AppContent = () => {
           ...p,
           accent: d.accent || '#D4FF32',
           widgetSize: d.widgetSize || 'LARGE',
-          avatar: d.avatar || null
+          avatar: d.avatar || null,
+          unitPrice: d.unitPrice ?? 0.5
         }));
       }
       setIsHydrated(true);

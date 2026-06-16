@@ -39,6 +39,7 @@ const ProtocolListItem = React.memo(({ config, idx, total, onReo, onEdit, onDel 
 export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP, onUpd, onDel }) => {
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [localAccent, setLocalAccent] = useState(settings.accent);
+  const [unitPrice, setUnitPrice] = useState(settings.unitPrice || 0.5);
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(settings.avatar || user?.photoURL || null);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
@@ -171,6 +172,24 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
               </Button>
             </div>
           </section>
+
+          {/* FINANCIAL CALIBRATION CARD */}
+          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-8">Financial Calibration</h3>
+            <div className="space-y-8">
+              <Input
+                label="Price per unit ($)"
+                type="number"
+                value={unitPrice}
+                onChange={setUnitPrice}
+                isDark
+                placeholder="0.50"
+              />
+              <Button variant="secondary" className="w-full h-16 text-[10px]" onClick={() => onUpd({ unitPrice: parseFloat(unitPrice) })}>
+                Save Economics
+              </Button>
+            </div>
+          </section>
         </div>
 
         <div className="lg:col-span-7 h-full">
@@ -194,6 +213,24 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
                   <span className="text-xs font-black uppercase tracking-[0.4em]">No active counters</span>
                 </div>
               )}
+            </div>
+          </section>
+
+          {/* FINANCIAL CALIBRATION CARD */}
+          <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-8">Financial Calibration</h3>
+            <div className="space-y-8">
+              <Input
+                label="Price per unit ($)"
+                type="number"
+                value={unitPrice}
+                onChange={setUnitPrice}
+                isDark
+                placeholder="0.50"
+              />
+              <Button variant="secondary" className="w-full h-16 text-[10px]" onClick={() => onUpd({ unitPrice: parseFloat(unitPrice) })}>
+                Save Economics
+              </Button>
             </div>
           </section>
         </div>
