@@ -3,27 +3,23 @@ import { motion } from 'framer-motion';
 import { cn } from '../../utils/utils';
 
 /**
- * High-Fidelity Burning Ember (Leading Edge)
+ * Neon Edge Glow
+ * Pulsating accent at the leading edge of the progress bar.
  */
-const BurningEdge = ({ isOver }) => (
-  <div className="absolute right-0 top-0 bottom-0 w-4 flex items-center justify-center z-20 pointer-events-none">
-    {/* Inner Hot Spot */}
-    <motion.div
-      animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.1, 1] }}
-      transition={{ duration: 1.5, repeat: Infinity }}
-      className={cn("w-2 h-[90%] blur-[1px]", isOver ? "bg-red-400" : "bg-red-500")}
-    />
-    {/* Outer Glow */}
-    <motion.div
-      animate={{ scale: [1, 1.5, 1], opacity: [0.1, 0.3, 0.1] }}
-      transition={{ duration: 2, repeat: Infinity }}
-      className={cn("absolute inset-0 w-10 h-10 blur-xl rounded-full", isOver ? "bg-red-600" : "bg-red-500")}
-    />
-  </div>
+const NeonEdge = ({ isOver }) => (
+  <motion.div
+    animate={{ opacity: [0.3, 0.7, 0.3], scale: [1, 1.2, 1] }}
+    transition={{ duration: 1.5, repeat: Infinity }}
+    className={cn(
+      "absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-12 blur-xl rounded-full z-10",
+      isOver ? "bg-red-500" : "bg-accent"
+    )}
+  />
 );
 
 /**
- * RyoRollProgress (Minimal Realistic Hand-Rolled)
+ * RyoRollProgress (Master RYO)
+ * Tapered white body growing from left to right.
  */
 export const RyoRollProgress = React.memo(({ count, limit, size }) => {
   const isOver = count >= limit;
@@ -33,26 +29,30 @@ export const RyoRollProgress = React.memo(({ count, limit, size }) => {
   return (
     <div className={cn("relative flex items-center justify-start", isLarge ? "w-44 h-8" : "w-32 h-6")}>
       {/* Background Track */}
-      <div className="absolute inset-0 bg-white/5 rounded-full border border-white/5" />
+      <div className="absolute inset-0 bg-white/5" style={{ clipPath: 'polygon(0% 0%, 100% 25%, 100% 75%, 0% 100%)' }} />
 
-      {/* Progress Body */}
+      {/* Progress Fill */}
       <motion.div
         initial={{ width: 0 }}
-        animate={{ width: `${progress * 85}%` }} // Leave space for roach
-        className="h-full bg-white relative z-10 rounded-l-full"
+        animate={{ width: `${progress * 85}%` }}
+        className="h-full bg-white relative z-20"
         transition={{ type: 'spring', damping: 20 }}
+        style={{ clipPath: 'polygon(0% 0%, 100% 25%, 100% 75%, 0% 100%)' }}
       >
-        {progress > 0 && <BurningEdge isOver={isOver} />}
+        {progress > 0 && <NeonEdge isOver={isOver} />}
       </motion.div>
 
-      {/* Roach / Filter (Fixed at Right) */}
-      <div className="absolute right-0 top-0 bottom-0 w-[15%] bg-neutral-800 rounded-r-full border-l border-black/40 z-20 shadow-inner" />
+      {/* Fixed Roach (Right) */}
+      <div
+        className="absolute right-[-8px] w-6 h-[40%] bg-neutral-800 rounded-sm z-30"
+        style={{ transform: 'perspective(100px) rotateY(-20deg)' }}
+      />
     </div>
   );
 });
 
 /**
- * JointProgress (King/Queen Conical)
+ * JointProgress (Master Conical)
  */
 const JointProgress = React.memo(({ count, limit, variant, size }) => {
   const isOver = count >= limit;
@@ -62,25 +62,29 @@ const JointProgress = React.memo(({ count, limit, variant, size }) => {
 
   return (
     <div className={cn("relative flex items-center justify-start", isLarge ? (isQueen ? "w-40 h-10" : "w-48 h-8") : "w-32 h-6")}>
-      <div className="absolute inset-0 bg-white/5 rounded-sm" style={{ clipPath: 'polygon(0% 0%, 100% 40%, 100% 60%, 0% 100%)' }} />
+      {/* Track */}
+      <div className="absolute inset-0 bg-white/5" style={{ clipPath: 'polygon(0% 0%, 100% 40%, 100% 60%, 0% 100%)' }} />
 
+      {/* Fill */}
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${progress * 85}%` }}
-        className="h-full bg-white relative z-10"
+        className="h-full bg-white relative z-20"
         transition={{ type: 'spring', damping: 20 }}
         style={{ clipPath: 'polygon(0% 0%, 100% 40%, 100% 60%, 0% 100%)' }}
       >
-        {progress > 0 && <BurningEdge isOver={isOver} />}
+        {progress > 0 && <NeonEdge isOver={isOver} />}
       </motion.div>
 
-      <div className="absolute right-0 top-0 bottom-0 w-[15%] bg-neutral-900 border-l border-white/5 z-20" style={{ clipPath: 'polygon(0% 40%, 100% 40%, 100% 60%, 0% 60%)' }} />
+      {/* Roach */}
+      <div className="absolute right-[-10px] w-10 h-[30%] bg-neutral-900 border-l border-white/5 z-30" />
     </div>
   );
 });
 
 /**
- * SmokingProgress (Minimal Realistic Schachtel)
+ * SmokingProgress (Master Schachtel)
+ * Features the orange dotted filter at the fixed right end.
  */
 export const SmokingProgress = React.memo(({ count, limit, variant, size }) => {
   if (variant === 'KING' || variant === 'QUEEN') {
@@ -92,23 +96,23 @@ export const SmokingProgress = React.memo(({ count, limit, variant, size }) => {
   const isLarge = size === 'LARGE';
 
   return (
-    <div className={cn("relative flex items-center justify-start", isLarge ? "w-48 h-10" : "w-36 h-8")}>
-      {/* Cigarette Track */}
-      <div className="absolute inset-0 bg-white/5 rounded-[4px] border border-white/5" />
+    <div className={cn("relative flex items-center justify-start group", isLarge ? "w-48 h-10" : "w-36 h-8")}>
+      {/* Track */}
+      <div className="absolute inset-0 bg-white/5 rounded-[2px]" />
 
-      {/* Progress Fill */}
+      {/* Fill (Fills 70% of total width, leaving 30% for filter) */}
       <motion.div
         initial={{ width: 0 }}
-        animate={{ width: `${progress * 75}%` }} // Space for filter
-        className="h-full bg-white relative z-10 rounded-l-[4px]"
+        animate={{ width: `${progress * 70}%` }}
+        className="h-full bg-white relative z-20 rounded-l-[2px]"
         transition={{ type: 'spring', damping: 20 }}
       >
-        {progress > 0 && <BurningEdge isOver={isOver} />}
+        {progress > 0 && <NeonEdge isOver={isOver} />}
       </motion.div>
 
-      {/* Orange Filter (Fixed at Right) */}
-      <div className="absolute right-0 top-0 bottom-0 w-[25%] bg-[#f4a261] rounded-r-[4px] border-l border-black/10 z-20 flex items-center justify-center overflow-hidden">
-        <div className="grid grid-cols-3 gap-[2px] opacity-20">
+      {/* Orange Filter (Fixed Right) */}
+      <div className="absolute right-0 top-0 bottom-0 w-[30%] bg-[#f4a261] rounded-r-[2px] flex items-center justify-center z-10 overflow-hidden">
+        <div className="grid grid-cols-3 gap-[3px] opacity-40">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="w-[3px] h-[3px] rounded-full bg-black" />
           ))}
