@@ -26,7 +26,6 @@ const lazyWithRetry = (componentImport) => lazy(async () => {
     return await componentImport();
   } catch (error) {
     console.error("Chunk loading failed, forcing hard refresh...", error);
-    // Silent hard reload to fetch newest build hashes
     window.location.reload(true);
     return { default: () => null };
   }
@@ -39,7 +38,7 @@ const HistoryScreen = lazyWithRetry(() => import('./components/history/HistorySc
 const SettingsScreen = lazyWithRetry(() => import('./components/settings/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 
 // --- GLOBAL CONSTANTS ---
-const APP_VERSION = "29.8.1-EURO-FORCED-RELOAD";
+const APP_VERSION = "BETA-29.8.3";
 
 // --- GLOBAL COMPONENTS ---
 
@@ -50,19 +49,10 @@ const LoadingView = () => (
   </div>
 );
 
-const ErrorView = ({ msg }) => (
-  <div className="min-h-screen w-full bg-[#020202] flex flex-col items-center justify-center p-12 text-center text-white font-inter">
-    <AlertCircle className="text-danger mb-12" size={120} strokeWidth={2} />
-    <h2 className="text-5xl font-[1000] uppercase tracking-tighter leading-none mb-8 font-inter">Sync Failure</h2>
-    <p className="text-white/60 text-sm max-w-sm font-bold opacity-60 leading-relaxed uppercase tracking-widest mb-16 font-inter">{msg}</p>
-    <button onClick={() => window.location.reload()} className="rounded-[32px] font-[1000] uppercase tracking-[0.6em] px-20 h-24 bg-white text-black shadow-2xl active:scale-95 transition-all font-inter font-black">Try Again</button>
-  </div>
-);
-
 const NavBtn = React.memo(({ id, icon: Icon, label, active, onClick }) => (
-  <button onClick={onClick} className="relative flex-1 py-3 flex flex-col items-center gap-1.5 group transition-all duration-500 font-inter">
+  <button onClick={onClick} className="relative flex-1 py-3 flex flex-col items-center gap-1.5 group transition-all duration-500 font-inter text-white">
     <div className={cn("absolute -top-3 w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_12px_var(--accent)] transition-all duration-500", active ? "opacity-100 scale-100" : "opacity-0 scale-0")} />
-    <Icon size={24} className={cn("transition-all duration-500", active ? "text-accent scale-110 drop-shadow-[0_0_100px_var(--accent-rgb)]" : "text-white/60 group-hover:text-white/90")} style={{'--accent-rgb': 'rgba(0,210,255,0.4)'}} strokeWidth={active ? 3 : 2} />
+    <Icon size={24} className={cn("transition-all duration-500", active ? "text-accent scale-110 drop-shadow-[0_0_100px_var(--accent-rgb)]" : "text-white/60 group-hover:text-white/90")} strokeWidth={active ? 3 : 2} />
     <span className={cn("text-[9px] font-black uppercase tracking-[0.3em] transition-all duration-500 font-inter", active ? "text-white opacity-100" : "text-white/60 opacity-0 group-hover:opacity-90 translate-y-2 group-hover:translate-y-0 font-inter")}>{label}</span>
   </button>
 ));
@@ -75,28 +65,13 @@ class GlobalErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       const isChunkError = this.state.error?.toString().includes("loading dynamically imported module");
-
-      if (isChunkError) {
-        // Auto-recover from chunk load errors (caused by new deployments)
-        window.location.reload(true);
-        return null;
-      }
-
+      if (isChunkError) { window.location.reload(true); return null; }
       return (
         <div className="min-h-screen w-full bg-[#020202] flex flex-col items-center justify-center p-12 text-center text-white font-inter">
           <div className="p-8 bg-danger/10 rounded-[32px] text-danger border border-danger/20 shadow-2xl mb-8"><AlertCircle size={48} /></div>
           <h2 className="text-3xl font-[1000] uppercase tracking-tighter leading-none mb-4 font-inter">System Error</h2>
           <p className="text-white/60 text-sm mb-10 max-w-md font-bold leading-relaxed">{this.state.error?.toString() || "Sync failed."}</p>
-          <button
-            onClick={() => {
-              localStorage.clear();
-              sessionStorage.clear();
-              window.location.href = window.location.origin + '?cache-bust=' + Date.now();
-            }}
-            className="px-10 h-18 rounded-full bg-white text-black font-black uppercase tracking-widest active:scale-95 transition-all shadow-2xl"
-          >
-            Reset System
-          </button>
+          <button onClick={() => { localStorage.clear(); sessionStorage.clear(); window.location.href = window.location.origin + '?cache-bust=' + Date.now(); }} className="px-10 h-18 rounded-full bg-white text-black font-black uppercase tracking-widest active:scale-95 transition-all shadow-2xl">Reset System</button>
         </div>
       );
     }
@@ -108,6 +83,19 @@ class GlobalErrorBoundary extends React.Component {
 
 const AppContent = () => {
   const { user, loading: authLoading } = useAuth();
+
+  // --- AUTO-REFRESH: Detect new build and force browser update ---
+  useEffect(() => {
+    const lastBuild = localStorage.getItem('tabak_last_build');
+    const currentBuild = String(typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : Date.now());
+    if (lastBuild && lastBuild !== currentBuild) {
+      localStorage.setItem('tabak_last_build', currentBuild);
+      window.location.reload(true);
+    } else {
+      localStorage.setItem('tabak_last_build', currentBuild);
+    }
+  }, []);
+
   const [settings, setSettings] = useState({
     accent: localStorage.getItem('tabak_accent') || '#D4FF32',
     widgetSize: 'LARGE',
@@ -129,14 +117,8 @@ const AppContent = () => {
   const [editProtocol, setEditProtocol] = useState(null);
   const [showLogout, setShowLogout] = useState(false);
 
-  // RESET UI STATE ON AUTH CHANGE
   useEffect(() => {
-    if (!user) {
-      setShowLogout(false);
-      setShowAdd(false);
-      setEditTarget(null);
-      setEditProtocol(null);
-    }
+    if (!user) { setShowLogout(false); setShowAdd(false); setEditTarget(null); setEditProtocol(null); }
   }, [user]);
 
   useEffect(() => {
@@ -166,16 +148,15 @@ const AppContent = () => {
   }, [user]);
 
   const handleAddProtocol = async (data) => {
-    try { await addProtocol(data); setShowAdd(false); } catch (e) { alert(e.message); }
+    try { await addProtocol(data); setShowAdd(false); } catch (e) { console.error(e); }
   };
 
   const handleUpdateProtocol = async (data) => {
-    try { await updateProtocol(editProtocol.id, data); setEditProtocol(null); } catch (e) { alert(e.message); }
+    try { await updateProtocol(editProtocol.id, data); setEditProtocol(null); } catch (e) { console.error(e); }
   };
 
   if (authLoading) return <LoadingView />;
 
-  // DYNAMIC GRID CONFIGURATION BASED ON WIDGET SIZE
   const gridClasses = {
     SMALL: "grid-cols-2 lg:grid-cols-6 gap-4",
     MEDIUM: "grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6",
@@ -222,7 +203,7 @@ const AppContent = () => {
           </main>
 
           <nav className="fixed bottom-0 left-0 right-0 z-[100] bg-[#020202]/80 backdrop-blur-3xl border-t border-white/[0.03] pb-[env(safe-area-inset-bottom)] px-6 font-inter">
-            <div className="max-w-xl mx-auto flex items-center justify-around h-20">
+            <div className="max-w-xl mx-auto flex items-center justify-around h-20 text-white">
               <NavBtn id="track" icon={LayoutGrid} label="Track" active={activeTab === 'track'} onClick={() => setActiveTab('track')} />
               <NavBtn id="history" icon={BarChart3} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
               <NavBtn id="control" icon={Settings} label="Settings" active={activeTab === 'control'} onClick={() => setActiveTab('control')} />

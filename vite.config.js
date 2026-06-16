@@ -4,15 +4,18 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  define: {
+    // Inject a unique build timestamp to force UI updates
+    __BUILD_TIME__: JSON.stringify(Date.now()),
+  },
   build: {
-    // Generate manifest.json in outDir
     manifest: true,
     rollupOptions: {
       output: {
-        // Force unique filenames for every build to bust CDN/Browser cache
-        entryFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
-        chunkFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
-        assetFileNames: `assets/[name]-[hash]-${Date.now()}.[ext]`
+        // Break cache by including timestamp in every asset name
+        entryFileNames: `assets/[name].[hash].${Date.now()}.js`,
+        chunkFileNames: `assets/[name].[hash].${Date.now()}.js`,
+        assetFileNames: `assets/[name].[hash].${Date.now()}.[ext]`
       }
     }
   }
