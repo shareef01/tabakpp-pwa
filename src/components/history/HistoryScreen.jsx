@@ -18,9 +18,9 @@ const InsightCard = React.memo(({ icon: Icon, label, val, sub, color, onInfo }) 
   <div className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 p-6 rounded-2xl flex flex-col items-center justify-center text-center shadow-lg transition-all hover:border-white/10 group h-full relative overflow-hidden">
      <button
        onClick={onInfo}
-       className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-600 hover:text-white hover:bg-white/5 transition-all opacity-0 group-hover:opacity-100"
+       className="absolute top-4 right-4 p-2 rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-all z-10"
      >
-       <Info size={14} />
+       <Info size={16} strokeWidth={2.5} />
      </button>
 
      <div className={cn("p-3 rounded-xl bg-white/5 mb-4 shadow-inner border border-white/10 group-hover:scale-110 transition-transform duration-500", color)}>

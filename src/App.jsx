@@ -28,7 +28,7 @@ const HistoryScreen = lazy(() => import('./components/history/HistoryScreen').th
 const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 
 // --- GLOBAL CONSTANTS ---
-const APP_VERSION = "29.4.2-BOOT-RECOVERY";
+const APP_VERSION = "29.7.1-INFO-V2";
 
 // --- GLOBAL COMPONENTS ---
 
