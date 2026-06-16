@@ -3,48 +3,72 @@ import { motion } from 'framer-motion';
 import { cn } from '../../utils/utils';
 
 /**
- * RYO_ROLL Visualization
- * A specialized gauge for rolled cigarettes.
+ * RYO_ROLL (Hand-Rolled) Gauge
+ * Features a thinner, tapered silhouette that 'burns down' as count increases.
  */
 export const RyoRollProgress = React.memo(({ count, limit, size }) => {
   const progress = Math.min(1, count / (limit || 1));
+  const remaining = 1 - progress;
   const isLarge = size === 'LARGE';
 
   return (
-    <div className={cn("relative flex items-center justify-center", isLarge ? "w-40 h-8" : "w-32 h-6")}>
-      <div className="absolute inset-0 bg-neutral-800/40 rounded-full border border-white/5 overflow-hidden">
+    <div className={cn("relative flex items-center justify-end", isLarge ? "w-40 h-6" : "w-32 h-5")}>
+      {/* Hand-roll Paper (Burns from left) */}
+      <div className="flex-1 h-full flex items-center justify-end relative">
         <motion.div
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: progress }}
-          className="h-full bg-accent origin-left rounded-full shadow-[0_0_15px_var(--accent)] opacity-80"
-          transition={{ type: 'spring', damping: 20 }}
-        />
+          initial={{ width: '100%' }}
+          animate={{ width: `${remaining * 100}%` }}
+          className="h-full bg-white/90 rounded-l-sm relative"
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        >
+          {/* Active Glow Tip */}
+          {remaining > 0 && (
+            <div className="absolute left-0 top-0 bottom-0 w-2 bg-accent shadow-[0_0_15px_var(--accent)] animate-pulse" />
+          )}
+        </motion.div>
       </div>
-      <div className="absolute -right-2 w-4 h-full bg-amber-600/40 rounded-r-full blur-[2px]" />
+
+      {/* RYO Filter/Tip */}
+      <div className="w-6 h-full bg-neutral-700/60 rounded-r-full border-l border-black/20" />
     </div>
   );
 });
 
+/**
+ * SmokingProgress (Pre-rolled Schachtel)
+ * High-fidelity burn-down logic. The cigarette shortens as you smoke.
+ */
 export const SmokingProgress = React.memo(({ count, limit, variant, size }) => {
   const progress = Math.min(1, count / (limit || 1));
+  const remaining = 1 - progress;
   const isLarge = size === 'LARGE';
 
   const colors = {
     CIGARETTE: 'bg-white',
-    KING: 'bg-gradient-to-r from-neutral-200 to-white',
-    QUEEN: 'bg-gradient-to-r from-white to-neutral-200'
+    KING: 'bg-gradient-to-l from-white to-neutral-100',
+    QUEEN: 'bg-gradient-to-l from-white to-neutral-200'
   };
 
   return (
-    <div className={cn("relative flex items-center", isLarge ? "w-48 h-10" : "w-36 h-8")}>
-      <div className="flex-1 h-full bg-neutral-800/40 rounded-l-2xl rounded-r-3xl border border-white/5 overflow-hidden flex relative">
+    <div className={cn("relative flex items-center justify-end", isLarge ? "w-48 h-10" : "w-36 h-8")}>
+      {/* Cigarette Paper Body */}
+      <div className="flex-1 h-full flex items-center justify-end relative">
         <motion.div
-          initial={{ width: '0%' }}
-          animate={{ width: `${progress * 100}%` }}
-          className={cn("h-full origin-left", colors[variant] || colors.CIGARETTE)}
-          transition={{ type: 'spring', damping: 25 }}
-        />
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-amber-500 rounded-r-3xl shadow-inner border-l border-black/10" />
+          initial={{ width: '100%' }}
+          animate={{ width: `${remaining * 100}%` }}
+          className={cn("h-full relative shadow-lg", colors[variant] || colors.CIGARETTE)}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        >
+          {/* Active Ember Glow */}
+          {remaining > 0 && (
+            <div className="absolute left-0 top-0 bottom-0 w-3 bg-accent shadow-[0_0_20px_var(--accent)]" />
+          )}
+        </motion.div>
+      </div>
+
+      {/* Classic Filter */}
+      <div className="w-12 h-full bg-[#f89c33] rounded-r-3xl shadow-inner border-l border-black/10 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle,black_1px,transparent_1px)] bg-[length:4px_4px]" />
       </div>
     </div>
   );
