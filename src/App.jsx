@@ -20,12 +20,23 @@ import { DashboardSkeleton } from './components/dashboard/DashboardSkeleton';
 import { ProtocolFormOverlay } from './components/modals/ProtocolFormOverlay';
 import { EditOverlay } from './components/modals/EditOverlay';
 
-// --- LAZY LOADED SCREENS (Code Splitting) ---
-const AuthScreen = lazy(() => import('./components/auth/AuthScreen').then(m => ({ default: m.AuthScreen })));
-const TrackerCard = lazy(() => import('./components/dashboard/TrackerCard').then(m => ({ default: m.TrackerCard })));
-const MetricBanner = lazy(() => import('./components/dashboard/MetricBanner').then(m => ({ default: m.MetricBanner })));
-const HistoryScreen = lazy(() => import('./components/history/HistoryScreen').then(m => ({ default: m.HistoryScreen })));
-const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
+// --- LAZY LOADED SCREENS (Code Splitting with Auto-Retry) ---
+const lazyWithRetry = (componentImport) => lazy(async () => {
+  try {
+    return await componentImport();
+  } catch (error) {
+    console.error("Chunk loading failed, forcing hard refresh...", error);
+    // Silent hard reload to fetch newest build hashes
+    window.location.reload(true);
+    return { default: () => null };
+  }
+});
+
+const AuthScreen = lazyWithRetry(() => import('./components/auth/AuthScreen').then(m => ({ default: m.AuthScreen })));
+const TrackerCard = lazyWithRetry(() => import('./components/dashboard/TrackerCard').then(m => ({ default: m.TrackerCard })));
+const MetricBanner = lazyWithRetry(() => import('./components/dashboard/MetricBanner').then(m => ({ default: m.MetricBanner })));
+const HistoryScreen = lazyWithRetry(() => import('./components/history/HistoryScreen').then(m => ({ default: m.HistoryScreen })));
+const SettingsScreen = lazyWithRetry(() => import('./components/settings/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 
 // --- GLOBAL CONSTANTS ---
 const APP_VERSION = "29.7.7-MASTER-RESTORATION";
@@ -63,12 +74,29 @@ class GlobalErrorBoundary extends React.Component {
   componentDidCatch(error, info) { console.error("FATAL_APP_CRASH:", error, info); }
   render() {
     if (this.state.hasError) {
+      const isChunkError = this.state.error?.toString().includes("loading dynamically imported module");
+
+      if (isChunkError) {
+        // Auto-recover from chunk load errors (caused by new deployments)
+        window.location.reload(true);
+        return null;
+      }
+
       return (
         <div className="min-h-screen w-full bg-[#020202] flex flex-col items-center justify-center p-12 text-center text-white font-inter">
           <div className="p-8 bg-danger/10 rounded-[32px] text-danger border border-danger/20 shadow-2xl mb-8"><AlertCircle size={48} /></div>
           <h2 className="text-3xl font-[1000] uppercase tracking-tighter leading-none mb-4 font-inter">System Error</h2>
           <p className="text-white/60 text-sm mb-10 max-w-md font-bold leading-relaxed">{this.state.error?.toString() || "Sync failed."}</p>
-          <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="px-10 h-18 rounded-full bg-white text-black font-black uppercase tracking-widest active:scale-95 transition-all shadow-2xl">Reset System</button>
+          <button
+            onClick={() => {
+              localStorage.clear();
+              sessionStorage.clear();
+              window.location.href = window.location.origin + '?cache-bust=' + Date.now();
+            }}
+            className="px-10 h-18 rounded-full bg-white text-black font-black uppercase tracking-widest active:scale-95 transition-all shadow-2xl"
+          >
+            Reset System
+          </button>
         </div>
       );
     }
