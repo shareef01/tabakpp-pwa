@@ -3,123 +3,115 @@ import { motion } from 'framer-motion';
 import { cn } from '../../utils/utils';
 
 /**
- * Cinematic Ember Component
- * Shared logic for the glowing burning tip.
+ * Cinematic Burning Edge
+ * Ultra-narrow intense glow representing the active burn line.
  */
-const EmberGlow = ({ accent }) => (
-  <div className="absolute left-0 top-0 bottom-0 w-4 flex items-center justify-center z-20">
-    {/* Inner Core */}
+const EmberGlow = ({ isDanger }) => (
+  <div className="absolute left-[-2px] top-0 bottom-0 w-3 flex items-center justify-center z-30">
+    {/* Plasma Core */}
     <motion.div
       animate={{
-        scale: [1, 1.2, 1],
-        opacity: [0.8, 1, 0.8]
+        scaleX: [1, 1.3, 1],
+        opacity: [0.9, 1, 0.9]
+      }}
+      transition={{ duration: 1.5, repeat: Infinity }}
+      className={cn(
+        "w-[3px] h-full blur-[0.5px]",
+        isDanger ? "bg-red-400" : "bg-white"
+      )}
+    />
+    {/* Atmospheric Bloom */}
+    <motion.div
+      animate={{
+        scale: [1, 1.4, 1],
+        opacity: [0.4, 0.7, 0.4]
       }}
       transition={{ duration: 2, repeat: Infinity }}
-      className="w-1.5 h-[80%] rounded-full bg-white blur-[1px]"
+      className={cn(
+        "absolute inset-0 w-6 h-12 rounded-full blur-lg",
+        isDanger ? "bg-red-600" : "bg-accent"
+      )}
     />
-    {/* Primary Accent Glow */}
-    <motion.div
-      animate={{
-        scale: [1, 1.5, 1],
-        opacity: [0.3, 0.6, 0.3]
-      }}
-      transition={{ duration: 2.5, repeat: Infinity }}
-      className="absolute inset-0 bg-accent rounded-full blur-md"
-    />
-    {/* External Bloom */}
-    <div className="absolute -left-4 w-12 h-12 bg-accent opacity-10 blur-xl rounded-full" />
   </div>
 );
 
 /**
- * RyoRollProgress (Hand-Rolled)
- * Natural organic silhouette with subtle taper.
+ * RyoRollProgress (Hand-Rolled Mastery)
+ * Captures the organic, "perfectly imperfect" look of a rolled cigarette.
  */
 export const RyoRollProgress = React.memo(({ count, limit, size }) => {
-  const progress = Math.min(1, count / (limit || 1));
+  const isOver = count >= limit;
+  // Ensure a small "stub" always remains for visual identity
+  const progress = Math.min(0.92, count / (limit || 1));
   const remaining = 1 - progress;
   const isLarge = size === 'LARGE';
 
   return (
-    <div className={cn("relative flex items-center justify-end group", isLarge ? "w-52 h-12" : "w-40 h-10")}>
-      {/* Gauge Shadow (Depth) */}
-      <div className="absolute inset-x-2 bottom-0 h-2 bg-black/40 blur-lg rounded-full translate-y-2 opacity-50" />
-
-      {/* RYO Body */}
-      <div className="flex-1 h-full flex items-center justify-end relative">
+    <div className={cn("relative flex items-center justify-end", isLarge ? "w-44 h-10" : "w-36 h-8")}>
+      <div className="flex-1 h-full flex items-center justify-end relative overflow-visible">
         <motion.div
           initial={{ width: '100%' }}
           animate={{ width: `${remaining * 100}%` }}
-          className="h-full relative origin-right will-change-[width]"
-          transition={{ type: 'spring', damping: 20, stiffness: 120 }}
+          className="h-[80%] relative origin-right will-change-[width]"
+          transition={{ type: 'spring', damping: 25, stiffness: 120 }}
           style={{
-            clipPath: 'polygon(0% 5%, 100% 15%, 100% 85%, 0% 95%)',
-            background: 'linear-gradient(180deg, #ffffff 0%, #f9fafb 40%, #f3f4f6 60%, #e5e7eb 100%)',
-            boxShadow: 'inset -2px 0 5px rgba(0,0,0,0.1)'
+            clipPath: 'polygon(0% 10%, 100% 20%, 100% 80%, 0% 90%)',
+            background: 'linear-gradient(180deg, #ffffff 0%, #f3f4f6 40%, #e5e7eb 100%)',
           }}
         >
-          {/* Paper Grain */}
-          <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
-
-          {remaining > 0 && <EmberGlow />}
+          {/* Paper Texture */}
+          <div className="absolute inset-0 opacity-[0.05] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
+          <EmberGlow isDanger={isOver} />
         </motion.div>
       </div>
 
-      {/* Integrated RYO Filter */}
+      {/* RYO Filter / Twisted Tip */}
       <div
-        className="w-10 h-[65%] bg-[#222222] border-l border-black/30 relative shadow-inner overflow-hidden"
-        style={{ clipPath: 'polygon(0% 15%, 100% 25%, 100% 75%, 0% 85%)' }}
+        className="w-8 h-[60%] bg-[#1a1a1a] border-l border-black/40 relative shadow-inner"
+        style={{ clipPath: 'polygon(0% 20%, 100% 35%, 100% 65%, 0% 80%)' }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-50" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent" />
       </div>
     </div>
   );
 });
 
 /**
- * SmokingProgress (Pre-rolled Schachtel)
- * High-fidelity cylindrical geometry with realistic filter.
+ * SmokingProgress (Schachtel Precision)
+ * Realistic cylindrical geometry with stub-persistence logic.
  */
 export const SmokingProgress = React.memo(({ count, limit, variant, size }) => {
-  const progress = Math.min(1, count / (limit || 1));
+  const isOver = count >= limit;
+  // Never let the cigarette vanish completely; maintain a 15% stub identity
+  const progress = Math.min(0.85, count / (limit || 1));
   const remaining = 1 - progress;
   const isLarge = size === 'LARGE';
 
-  const colors = {
-    CIGARETTE: 'bg-white',
-    KING: 'bg-gradient-to-l from-white to-neutral-50',
-    QUEEN: 'bg-gradient-to-l from-white to-neutral-100'
-  };
-
   return (
-    <div className={cn("relative flex items-center justify-end group", isLarge ? "w-64 h-14" : "w-48 h-10")}>
-      {/* Gauge Shadow */}
-      <div className="absolute inset-x-4 bottom-0 h-3 bg-black/50 blur-xl rounded-full translate-y-3 opacity-40" />
-
-      {/* Cigarette Body */}
+    <div className={cn("relative flex items-center justify-end", isLarge ? "w-56 h-12" : "w-44 h-9")}>
+      {/* Dynamic Body */}
       <div className="flex-1 h-full flex items-center justify-end relative">
         <motion.div
           initial={{ width: '100%' }}
           animate={{ width: `${remaining * 100}%` }}
-          className={cn("h-full relative origin-right will-change-[width] shadow-2xl", colors[variant] || colors.CIGARETTE)}
-          transition={{ type: 'spring', damping: 20, stiffness: 120 }}
+          className="h-full relative origin-right will-change-[width] shadow-2xl"
+          transition={{ type: 'spring', damping: 25, stiffness: 150 }}
           style={{
-            background: 'linear-gradient(180deg, #ffffff 0%, #fdfdfd 45%, #f7f7f7 55%, #ececec 100%)',
-            borderRadius: '4px 0 0 4px'
+            background: 'linear-gradient(180deg, #ffffff 0%, #f9f9f9 45%, #f0f0f0 55%, #e0e0e0 100%)',
+            borderRadius: '2px 0 0 2px'
           }}
         >
-          {remaining > 0 && <EmberGlow />}
+          <EmberGlow isDanger={isOver} />
         </motion.div>
       </div>
 
-      {/* Realistic Cork Filter */}
-      <div className="w-16 h-full bg-[#f4a261] rounded-r-[6px] shadow-inner border-l border-black/20 relative overflow-hidden flex items-center justify-center">
-        {/* Cork Texture Pattern */}
-        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(#8b4513_1px,transparent_1px)] bg-[length:3px_3px]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/20" />
-
-        {/* Brand Line (Subtle Detail) */}
-        <div className="w-1 h-full bg-black/10 absolute left-2" />
+      {/* Cork Filter Architecture */}
+      <div className="w-14 h-full bg-[#f4a261] rounded-r-[4px] border-l border-black/20 relative overflow-hidden">
+        {/* Fine Grain Filter Pattern */}
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#8b4513_1px,transparent_1px)] bg-[length:3px_3px]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/15 via-transparent to-black/20" />
+        {/* Professional Brand Line */}
+        <div className="absolute left-2 top-0 bottom-0 w-[2px] bg-black/10" />
       </div>
     </div>
   );
@@ -132,21 +124,21 @@ export const RingProgress = React.memo(({ count, limit, size }) => {
   const isLarge = size === 'LARGE';
 
   return (
-    <div className={cn("relative flex items-center justify-center", isLarge ? "w-32 h-32" : "w-20 h-20")}>
+    <div className={cn("relative flex items-center justify-center", isLarge ? "w-28 h-28" : "w-20 h-20")}>
       <svg className="w-full h-full -rotate-90">
         <circle cx="50%" cy="50%" r={radius} className="fill-none stroke-white/5" strokeWidth="8" />
         <motion.circle
           cx="50%" cy="50%" r={radius}
-          className="fill-none stroke-accent drop-shadow-[0_0_12px_var(--accent)]"
+          className="fill-none stroke-accent drop-shadow-[0_0_10px_var(--accent)]"
           strokeWidth="8"
           strokeLinecap="round"
           initial={{ strokeDasharray: circum, strokeDashoffset: circum }}
           animate={{ strokeDashoffset: circum - (progress * circum) }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
+          transition={{ duration: 1, ease: "easeOut" }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-3 h-3 rounded-full bg-accent animate-pulse shadow-[0_0_15px_var(--accent)]" />
+        <div className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse shadow-[0_0_12px_var(--accent)]" />
       </div>
     </div>
   );
@@ -157,11 +149,11 @@ export const GenericBarProgress = React.memo(({ count, limit, size }) => {
   const isLarge = size === 'LARGE';
 
   return (
-    <div className={cn("w-full bg-neutral-800/40 rounded-full border border-white/5 overflow-hidden p-0.5", isLarge ? "max-w-[240px] h-6" : "max-w-[180px] h-4")}>
+    <div className={cn("w-full bg-neutral-800/40 rounded-full border border-white/5 overflow-hidden p-0.5", isLarge ? "max-w-[200px] h-5" : "max-w-[160px] h-3.5")}>
       <motion.div
         initial={{ scaleX: 0 }}
         animate={{ scaleX: progress }}
-        className="h-full bg-accent origin-left rounded-full shadow-[0_0_10px_var(--accent)]"
+        className="h-full bg-accent origin-left rounded-full shadow-[0_0_8px_var(--accent)]"
         transition={{ type: 'spring', damping: 20 }}
       />
     </div>
