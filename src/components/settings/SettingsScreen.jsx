@@ -8,15 +8,13 @@ import { Card, Input, Button } from '../Common';
 import { cn } from '../../utils/utils';
 import { sanitizeString } from '../../utils/security';
 import { ConfirmModal } from '../modals/ConfirmModal';
+import { AlertOverlay } from '../modals/Modals';
 
 const ACCENTS = [
   { n: 'Crimson', v: '#FB7185' }, { n: 'Lime', v: '#D4FF32' }, { n: 'Cobalt', v: '#00D2FF' },
   { n: 'Amber', v: '#FBBF24' }, { n: 'Emerald', v: '#4ADE80' }, { n: 'Violet', v: '#A78BFA' }
 ];
 
-/**
- * Optimized Protocol Item
- */
 const ProtocolListItem = React.memo(({ config, idx, total, onReo, onEdit, onDel }) => (
   <div className="flex flex-row items-center w-full p-4 bg-black/30 rounded-2xl border border-white/5 group hover:border-white/10 transition-all duration-300 gap-4">
     <div className="flex flex-col gap-1 shrink-0">
@@ -43,9 +41,9 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(settings.avatar || user?.photoURL || null);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [notification, setNotification] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Sync internal previewUrl state when external cloud settings change
   useEffect(() => {
     setPreviewUrl(settings.avatar || user?.photoURL || null);
   }, [settings.avatar, user?.photoURL]);
@@ -55,7 +53,7 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
     if (!file || !user) return;
 
     if (file.size > 500 * 1024) {
-      alert("Image too large. Max 500KB.");
+      setNotification({ title: "Sync Rejected", message: "File exceeds 500KB cap." });
       return;
     }
 
@@ -67,8 +65,9 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
       try {
         await updateDoc(doc(db, 'users', user.uid), { avatar: base64 });
         await updateProfile(auth.currentUser, { photoURL: base64 });
+        setNotification({ title: "Identity Synced", message: "Cloud ledger updated.", type: 'success' });
       } catch (err) {
-        alert("Upload Sync Failed.");
+        setNotification({ title: "Sync Failed", message: "Network handshake error." });
       } finally {
         setIsUploading(false);
       }
@@ -83,8 +82,9 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
       await updateProfile(auth.currentUser, { photoURL: null });
       setPreviewUrl(null);
       setShowRemoveConfirm(false);
+      setNotification({ title: "Purge Success", message: "Identity assets cleared.", type: 'success' });
     } catch (err) {
-      alert("Removal Failed.");
+      setNotification({ title: "Purge Failed", message: "Unable to reach vault." });
     } finally {
       setIsUploading(false);
     }
@@ -96,9 +96,9 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
     try {
       await updateProfile(auth.currentUser, { displayName: cleanName });
       await updateDoc(doc(db, 'users', user.uid), { name: cleanName });
-      alert("Profile Saved.");
+      setNotification({ title: "Handle Updated", message: "Registry profile saved.", type: 'success' });
     } catch (e) {
-      alert("Update Failed.");
+      setNotification({ title: "Update Failed", message: "Handshake refused." });
     }
   };
 
@@ -106,17 +106,13 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-7xl mx-auto px-4 lg:px-8 font-inter">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pb-24">
 
-        {/* LEFT COLUMN: Identity & Appearance */}
         <div className="lg:col-span-5 space-y-8">
-
-          {/* IDENTITY CARD */}
           <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl relative overflow-hidden">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-10">Display Identity</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-10">Identity Management</h3>
 
             <div className="flex flex-col items-center gap-10">
               <input type="file" ref={fileInputRef} onChange={handlePfpUpload} className="hidden" accept="image/*" />
 
-              {/* Avatar Zone */}
               <div className="relative group">
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -141,33 +137,17 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
                 )}
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-4 w-full">
                 <Button variant="secondary" className="flex-1 h-16 text-[10px]" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                   Update
                 </Button>
-                <Button
-                  variant="danger"
-                  className="flex-1 h-16 text-[10px]"
-                  onClick={() => setShowRemoveConfirm(true)}
-                  disabled={isUploading || !previewUrl}
-                >
+                <Button variant="danger" className="flex-1 h-16 text-[10px]" onClick={() => setShowRemoveConfirm(true)} disabled={isUploading || !previewUrl}>
                   Remove
                 </Button>
               </div>
 
-              {/* HIGH-FIDELITY OVERLAY */}
-              <ConfirmModal
-                isOpen={showRemoveConfirm}
-                onClose={() => setShowRemoveConfirm(false)}
-                onConfirm={handleRemovePfp}
-                title="Purge Identity?"
-                message="This will permanently delete your profile photo from the secure vault."
-                confirmText="Purge"
-              />
-
               <div className="w-full space-y-8 pt-8 border-t border-white/5">
-                <Input label="User Handle" value={displayName} onChange={setDisplayName} isDark />
+                <Input label="Registry Handle" value={displayName} onChange={setDisplayName} isDark />
                 <Button className="w-full h-16" onClick={handleUpdateProfile}>
                   Apply Changes
                 </Button>
@@ -175,7 +155,6 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
             </div>
           </section>
 
-          {/* APPEARANCE CARD */}
           <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500 mb-8">Appearance</h3>
             <div className="space-y-8">
@@ -193,13 +172,12 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
           </section>
         </div>
 
-        {/* RIGHT COLUMN: Registry Management */}
         <div className="lg:col-span-7 h-full">
           <section className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 rounded-[32px] p-8 lg:p-10 shadow-xl min-h-[600px] flex flex-col">
             <div className="flex items-center justify-between mb-10">
                <div className="space-y-1">
-                 <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Registry Management</h3>
-                 <span className="text-2xl font-[1000] tracking-tighter uppercase text-white block">Active Counters</span>
+                 <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Registry Protocols</h3>
+                 <span className="text-2xl font-[1000] tracking-tighter uppercase text-white block leading-none">Your Counters</span>
                </div>
                <button onClick={onAdd} className="w-14 h-14 bg-accent text-zinc-950 rounded-2xl shadow-xl active:scale-90 transition-all flex items-center justify-center hover:rotate-90">
                  <Plus size={28} strokeWidth={3} />
@@ -216,24 +194,25 @@ export const SettingsScreen = ({ configs, user, settings, onAdd, onReo, onEditP,
                 </div>
               )}
             </div>
-
-            <div className="mt-10 pt-10 border-t border-white/5">
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-neutral-600 text-center leading-relaxed">
-                Changes to counters are synchronized in real-time across all active sessions.
-              </p>
-            </div>
           </section>
         </div>
       </div>
 
-      {/* CONFIRMATION OVERLAY */}
       <ConfirmModal
         isOpen={showRemoveConfirm}
         onClose={() => setShowRemoveConfirm(false)}
         onConfirm={handleRemovePfp}
         title="Purge Identity?"
-        message="This will permanently delete your profile photo from the secure vault."
-        confirmText="Confirm Purge"
+        message="This assets will be permanently deleted from the TABAK++ secure vault."
+        confirmText="Purge Assets"
+      />
+
+      <AlertOverlay
+        isOpen={!!notification}
+        onClose={() => setNotification(null)}
+        title={notification?.title}
+        message={notification?.message}
+        type={notification?.type || 'error'}
       />
 
     </motion.div>
