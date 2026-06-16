@@ -10,11 +10,15 @@ export const SmokingCalculator = {
 
   calculateStreak: (logs, configs) => {
     if (!logs || logs.length === 0) return 0;
-    const totalLimit = SmokingCalculator.getTotalLimit(configs);
+
+    // FILTER: Only count CIGARETTE type protocols for streak calculations
+    const cigaretteConfigs = configs.filter(c => c.type === 'CIGARETTE');
+    if (cigaretteConfigs.length === 0) return 0;
+
+    const totalLimit = cigaretteConfigs.reduce((sum, c) => sum + c.limit, 0);
 
     // Sort logs descending by date
     const sortedLogs = [...logs]
-      .filter(l => Object.values(l.counts || {}).some(v => v > 0))
       .sort((a, b) => b.logDate.localeCompare(a.logDate));
 
     if (sortedLogs.length === 0) return 0;
@@ -25,18 +29,23 @@ export const SmokingCalculator = {
     yesterdayDate.setDate(now.getDate() - 1);
     const yesterday = yesterdayDate.toISOString().split('T')[0];
 
-    const firstLogDate = sortedLogs[0].logDate;
-    if (firstLogDate !== today && firstLogDate !== yesterday) return 0;
+    // Streak is active if user has logged today OR yesterday
+    const lastLogDate = sortedLogs[0].logDate;
+    if (lastLogDate !== today && lastLogDate !== yesterday) return 0;
 
     let streak = 0;
-    let expectedDate = new Date(firstLogDate);
+    let expectedDate = new Date(lastLogDate);
 
     for (const log of sortedLogs) {
-      const logDate = new Date(log.logDate);
-      if (logDate.toISOString().split('T')[0] !== expectedDate.toISOString().split('T')[0]) break;
+      const logDateString = new Date(log.logDate).toISOString().split('T')[0];
+      const expectedDateString = expectedDate.toISOString().split('T')[0];
 
-      const dayTotal = SmokingCalculator.getTotalCount(log, configs);
-      if (dayTotal <= totalLimit) {
+      if (logDateString !== expectedDateString) break;
+
+      // Only count cigarette units for the day total
+      const dayCigaretteTotal = cigaretteConfigs.reduce((sum, c) => sum + (log.counts?.[c.id] || 0), 0);
+
+      if (dayCigaretteTotal <= totalLimit) {
         streak++;
         expectedDate.setDate(expectedDate.getDate() - 1);
       } else {
@@ -48,10 +57,12 @@ export const SmokingCalculator = {
 
   calculateSavings: (logs, configs, globalCost) => {
     let total = 0;
+    const cigaretteConfigs = configs.filter(c => c.type === 'CIGARETTE');
+
     logs.forEach(log => {
       Object.entries(log.counts || {}).forEach(([cid, count]) => {
-        const config = configs.find(c => c.id === cid);
-        if (config && !config.excludeFromEconomics) {
+        const config = cigaretteConfigs.find(c => c.id === cid);
+        if (config) {
           const price = config.pricePerUnit > 0 ? config.pricePerUnit : globalCost;
           total += count * price;
         }
@@ -60,10 +71,15 @@ export const SmokingCalculator = {
     return total;
   },
 
-  calculateLifeLostMinutes: (logs) => {
+  calculateLifeLostMinutes: (logs, configs) => {
+    const cigaretteIds = (configs || []).filter(c => c.type === 'CIGARETTE').map(c => c.id);
+
     return logs.reduce((sum, log) => {
-      const dayTotal = Object.values(log.counts || {}).reduce((a, b) => a + b, 0);
-      return sum + (dayTotal * 11);
+      const dailyCigarettes = Object.entries(log.counts || {})
+        .filter(([id]) => cigaretteIds.includes(id))
+        .reduce((s, [_, count]) => s + count, 0);
+
+      return sum + (dailyCigarettes * 11);
     }, 0);
   },
 

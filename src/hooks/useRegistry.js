@@ -66,7 +66,7 @@ export const useRegistry = (user, today) => {
         rank: SmokingCalculator.getRank(totalXP),
         progress: totalLimit > 0 ? totalCount / totalLimit : 0,
         savings: SmokingCalculator.calculateSavings(historicalLogs, counterProtocols, 0.5) ?? 0,
-        lost: SmokingCalculator.calculateLifeLostMinutes(historicalLogs) ?? 0,
+        lost: SmokingCalculator.calculateLifeLostMinutes(historicalLogs, counterProtocols) ?? 0,
         todayLog
       };
     } catch (e) {
