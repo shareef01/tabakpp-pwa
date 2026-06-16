@@ -11,8 +11,9 @@ import { ConfirmModal } from '../modals/ConfirmModal';
 import { AlertOverlay } from '../modals/Modals';
 
 const ACCENTS = [
-  { n: 'Crimson', v: '#FB7185' }, { n: 'Lime', v: '#D4FF32' }, { n: 'Cobalt', v: '#00D2FF' },
-  { n: 'Amber', v: '#FBBF24' }, { n: 'Emerald', v: '#4ADE80' }, { n: 'Violet', v: '#A78BFA' }
+  { n: 'Crimson', v: '#FB7185' }, { n: 'Electric Lime', v: '#D4FF32' }, { n: 'Cobalt', v: '#3B82F6' },
+  { n: 'Amber', v: '#FBBF24' }, { n: 'Emerald', v: '#10B981' }, { n: 'Violet', v: '#8B5CF6' },
+  { n: 'Cyan', v: '#06B6D4' }, { n: 'Rose', v: '#F43F5E' }, { n: 'Cyber Gold', v: '#EAB308' }
 ];
 
 const ProtocolListItem = React.memo(({ config, idx, total, onReo, onEdit, onDel }) => (
