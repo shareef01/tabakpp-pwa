@@ -21,6 +21,13 @@ import { ProtocolFormOverlay } from './components/modals/ProtocolFormOverlay';
 import { EditOverlay } from './components/modals/EditOverlay';
 
 // --- LAZY LOADED SCREENS (Code Splitting with Auto-Retry) ---
+/**
+ * Utility for lazy loading components with an automatic retry mechanism.
+ * Forces a hard refresh if the chunk fails to load (e.g., due to network issues or new deployment).
+ *
+ * @param {Function} componentImport - A function that returns a dynamic import promise.
+ * @returns {React.LazyExoticComponent} A lazy-loaded React component.
+ */
 const lazyWithRetry = (componentImport) => lazy(async () => {
   try {
     return await componentImport();
@@ -42,6 +49,10 @@ const APP_VERSION = "BETA-29.9.1-TITAN-RESTORE";
 
 // --- GLOBAL COMPONENTS ---
 
+/**
+ * A full-screen loading view displayed during authentication or synchronization.
+ * Includes a spinning loader and animated text.
+ */
 const LoadingView = () => (
   <div className="min-h-screen w-full bg-[#020202] flex flex-col items-center justify-center space-y-12 text-white font-inter font-black">
     <Loader2 className="animate-spin text-rose-600" size={100} strokeWidth={3} />
@@ -49,6 +60,16 @@ const LoadingView = () => (
   </div>
 );
 
+/**
+ * Navigation Button component for the bottom navigation bar.
+ *
+ * @param {Object} props
+ * @param {string} props.id - Unique identifier for the tab.
+ * @param {React.ElementType} props.icon - Lucide icon component.
+ * @param {string} props.label - Display label for the button.
+ * @param {boolean} props.active - Whether the tab is currently active.
+ * @param {Function} props.onClick - Click handler for the button.
+ */
 const NavBtn = React.memo(({ id, icon: Icon, label, active, onClick }) => (
   <button onClick={onClick} className="relative flex-1 py-3 flex flex-col items-center gap-1.5 group transition-all duration-500 font-inter text-white">
     <div className={cn("absolute -top-3 w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_12px_var(--accent)] transition-all duration-500", active ? "opacity-100 scale-100" : "opacity-0 scale-0")} />
@@ -58,6 +79,10 @@ const NavBtn = React.memo(({ id, icon: Icon, label, active, onClick }) => (
 ));
 
 // --- ERROR BOUNDARY ---
+/**
+ * Catch-all component for handling fatal application errors.
+ * Displays a fallback UI and provides a system reset option.
+ */
 class GlobalErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
   static getDerivedStateFromError(error) { return { hasError: true, error }; }
@@ -81,10 +106,17 @@ class GlobalErrorBoundary extends React.Component {
 
 // --- ARCHITECTURAL CORE ---
 
+/**
+ * The main content wrapper for the application.
+ * Manages authentication state, user settings, real-time registry synchronization, and routing.
+ */
 const AppContent = () => {
   const { user, loading: authLoading } = useAuth();
 
-  // --- ARCHITECTURAL CACHE BUSTING: Force hard reload if version mismatch detected ---
+  /**
+   * Architectural Cache Busting:
+   * Forces a hard reload if a version mismatch is detected between local storage and server build time.
+   */
   useEffect(() => {
     const localBuildId = localStorage.getItem('tabak_build_id');
     const serverBuildId = String(typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : 'initial');
@@ -101,13 +133,17 @@ const AppContent = () => {
   }, []);
 
   const [settings, setSettings] = useState({
-    accent: localStorage.getItem('tabak_accent') || '#D4FF32',
+    accent: localStorage.getItem('tabak_accent') || '#00D1FF',
     widgetSize: 'LARGE',
     avatar: null,
     unitPrice: 0.5
   });
   const [isHydrated, setIsHydrated] = useState(false);
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  /**
+   * Main registry hook for managing logs, metrics, and protocols.
+   */
   const registry = useRegistry(user, today, settings.unitPrice);
 
   const {
@@ -125,6 +161,9 @@ const AppContent = () => {
     if (!user) { setShowLogout(false); setShowAdd(false); setEditTarget(null); setEditProtocol(null); }
   }, [user]);
 
+  /**
+   * Subscribes to real-time updates for the user's profile and settings in Firestore.
+   */
   useEffect(() => {
     if (!user) return;
     return onSnapshot(doc(db, 'users', user.uid), (s) => {
@@ -254,6 +293,10 @@ const AppContent = () => {
   );
 };
 
+/**
+ * Root Application component.
+ * Wraps the app content with the Error Boundary and Authentication Provider.
+ */
 const App = () => (
   <GlobalErrorBoundary>
     <AuthProvider>

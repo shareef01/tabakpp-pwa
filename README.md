@@ -30,6 +30,18 @@ Sophisticated identity management and "Obsidian Glass" styling with real-time cl
 
 ---
 
+## 📂 Project Structure
+
+*   `src/components/`: Reusable UI components categorized by feature (auth, dashboard, history, layout, modals, settings).
+*   `src/context/`: React Context providers for global state management (e.g., `AuthContext`).
+*   `src/hooks/`: Custom hooks for encapsulated logic (e.g., `useRegistry` for data orchestration).
+*   `src/services/`: Direct interfaces with external services like Firebase Firestore.
+*   `src/utils/`: Pure helper functions for formatting and calculations.
+*   `src/App.jsx`: Main application orchestrator and routing hub.
+*   `src/main.jsx`: Application entry point.
+
+---
+
 ## 🛠️ Technical Stack
 The app is engineered with a focus on performance, security, and architectural integrity.
 

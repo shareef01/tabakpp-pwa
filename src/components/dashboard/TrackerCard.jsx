@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Minus } from 'lucide-react';
 import { cn } from '../../utils/utils';
-import { SmokingProgress, RingProgress, GenericBarProgress, RyoRollProgress } from '../gauges/Gauges';
+import { SmokingProgress, RingProgress, GenericBarProgress, RyoRollProgress, ZigProgress, KngProgress, QnProgress } from '../gauges/Gauges';
 import { UI } from '../Common';
 
 /**
@@ -50,12 +50,20 @@ export const TrackerCard = React.memo(({ config, count, onInc, onDec, index, glo
           "flex items-center justify-center w-full transition-all duration-700 will-change-transform group-hover/card:scale-105",
           isLarge ? "h-36" : (isMedium ? "h-28" : "h-20")
         )}>
-          {config?.type === 'CIGARETTE' && <SmokingProgress count={count} limit={config.limit} variant="CIGARETTE" size={globalSize} />}
-          {config?.type === 'RYO_ROLL' && <RyoRollProgress count={count} limit={config.limit} size={globalSize} />}
-          {config?.type === 'SIMPLE' && <RingProgress count={count} limit={config.limit} size={globalSize} />}
-          {config?.type === 'JOINT_KING' && <SmokingProgress count={count} limit={config.limit} variant="KING" size={globalSize} />}
-          {config?.type === 'JOINT_QUEEN' && <SmokingProgress count={count} limit={config.limit} variant="QUEEN" size={globalSize} />}
-          {(!['CIGARETTE', 'RYO_ROLL', 'SIMPLE', 'JOINT_KING', 'JOINT_QUEEN'].includes(config?.type)) && <GenericBarProgress count={count} limit={config?.limit} size={globalSize} />}
+          {index === 0 ? <ZigProgress count={count} limit={config.limit} size={globalSize} /> :
+           index === 1 ? <KngProgress count={count} limit={config.limit} size={globalSize} /> :
+           index === 2 ? <QnProgress count={count} limit={config.limit} size={globalSize} /> :
+           (
+             <>
+               {config?.type === 'CIGARETTE' && <SmokingProgress count={count} limit={config.limit} variant="CIGARETTE" size={globalSize} />}
+               {config?.type === 'RYO_ROLL' && <RyoRollProgress count={count} limit={config.limit} size={globalSize} />}
+               {config?.type === 'SIMPLE' && <RingProgress count={count} limit={config.limit} size={globalSize} />}
+               {config?.type === 'JOINT_KING' && <SmokingProgress count={count} limit={config.limit} variant="KING" size={globalSize} />}
+               {config?.type === 'JOINT_QUEEN' && <SmokingProgress count={count} limit={config.limit} variant="QUEEN" size={globalSize} />}
+               {(!['CIGARETTE', 'RYO_ROLL', 'SIMPLE', 'JOINT_KING', 'JOINT_QUEEN'].includes(config?.type)) && <GenericBarProgress count={count} limit={config?.limit} size={globalSize} />}
+             </>
+           )
+          }
         </div>
 
         <div className="flex flex-col items-center text-center space-y-2">
