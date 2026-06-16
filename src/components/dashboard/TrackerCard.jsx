@@ -9,7 +9,7 @@ import { UI } from '../Common';
  * Performance Optimized TrackerCard
  * High-fidelity redesign with multi-layered glass and atmospheric lighting.
  */
-export const TrackerCard = React.memo(({ config, count, onInc, onDec, index, globalSize = 'LARGE' }) => {
+export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index, globalSize = 'LARGE' }) => {
   const isLimitReached = count >= (config?.limit ?? 1);
   const isSmall = globalSize === 'SMALL';
   const isMedium = globalSize === 'MEDIUM';
@@ -50,18 +50,18 @@ export const TrackerCard = React.memo(({ config, count, onInc, onDec, index, glo
           "flex items-center justify-center w-full transition-all duration-700 will-change-transform group-hover/card:scale-105",
           isLarge ? "h-36" : (isMedium ? "h-28" : "h-20")
         )}>
-          {index === 0 ? <ZigProgress count={count} limit={config.limit} size={globalSize} /> :
-           index === 1 ? <KngProgress count={count} limit={config.limit} size={globalSize} /> :
-           index === 2 ? <QnProgress count={count} limit={config.limit} size={globalSize} /> :
+          {index === 0 ? <ZigProgress count={count} limit={config?.limit} size={globalSize} /> :
+           index === 1 ? <KngProgress count={count} limit={config?.limit} size={globalSize} /> :
+           index === 2 ? <QnProgress count={count} limit={config?.limit} size={globalSize} /> :
            (
-             <>
-               {config?.type === 'CIGARETTE' && <SmokingProgress count={count} limit={config.limit} variant="CIGARETTE" size={globalSize} />}
-               {config?.type === 'RYO_ROLL' && <RyoRollProgress count={count} limit={config.limit} size={globalSize} />}
-               {config?.type === 'SIMPLE' && <RingProgress count={count} limit={config.limit} size={globalSize} />}
-               {config?.type === 'JOINT_KING' && <SmokingProgress count={count} limit={config.limit} variant="KING" size={globalSize} />}
-               {config?.type === 'JOINT_QUEEN' && <SmokingProgress count={count} limit={config.limit} variant="QUEEN" size={globalSize} />}
+             <React.Fragment>
+               {config?.type === 'CIGARETTE' && <SmokingProgress count={count} limit={config?.limit} variant="CIGARETTE" size={globalSize} />}
+               {config?.type === 'RYO_ROLL' && <RyoRollProgress count={count} limit={config?.limit} size={globalSize} />}
+               {config?.type === 'SIMPLE' && <RingProgress count={count} limit={config?.limit} size={globalSize} />}
+               {config?.type === 'JOINT_KING' && <SmokingProgress count={count} limit={config?.limit} variant="KING" size={globalSize} />}
+               {config?.type === 'JOINT_QUEEN' && <SmokingProgress count={count} limit={config?.limit} variant="QUEEN" size={globalSize} />}
                {(!['CIGARETTE', 'RYO_ROLL', 'SIMPLE', 'JOINT_KING', 'JOINT_QUEEN'].includes(config?.type)) && <GenericBarProgress count={count} limit={config?.limit} size={globalSize} />}
-             </>
+             </React.Fragment>
            )
           }
         </div>

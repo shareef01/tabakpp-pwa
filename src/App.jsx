@@ -33,7 +33,7 @@ const lazyWithRetry = (componentImport) => lazy(async () => {
     return await componentImport();
   } catch (error) {
     console.error("Chunk loading failed, forcing hard refresh...", error);
-    window.location.reload(true);
+    window.location.reload();
     return { default: () => null };
   }
 });
@@ -90,7 +90,7 @@ class GlobalErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       const isChunkError = this.state.error?.toString().includes("loading dynamically imported module");
-      if (isChunkError) { window.location.reload(true); return null; }
+      if (isChunkError) { window.location.reload(); return null; }
       return (
         <div className="min-h-screen w-full bg-[#020202] flex flex-col items-center justify-center p-12 text-center text-white font-inter">
           <div className="p-8 bg-danger/10 rounded-[32px] text-danger border border-danger/20 shadow-2xl mb-8"><AlertCircle size={48} /></div>

@@ -6,7 +6,7 @@ import { cn } from '../../utils/utils';
  * ZigProgress (Card 1: ZIG) - RESTORED
  * Multi-colored segmented bar mimicking a burning cigarette/joint.
  */
-export const ZigProgress = React.memo(({ count, limit, size }) => {
+export const ZigProgress = React.memo(({ count = 0, limit = 1, size }) => {
   const progress = Math.min(1, count / (limit || 1));
   const isLarge = size === 'LARGE';
 
@@ -34,7 +34,7 @@ export const ZigProgress = React.memo(({ count, limit, size }) => {
  * KngProgress (Card 2: KNG) - RESTORED
  * Grey capsule shell with a stark white inner bar and a glowing red warning ember block.
  */
-export const KngProgress = React.memo(({ count, limit, size }) => {
+export const KngProgress = React.memo(({ count = 0, limit = 1, size }) => {
   const progress = Math.min(1, count / (limit || 1));
   const isLarge = size === 'LARGE';
 
@@ -56,7 +56,7 @@ export const KngProgress = React.memo(({ count, limit, size }) => {
  * QnProgress (Card 3: QN) - RESTORED
  * Pure minimalist white capsule fill indicator inside the dark housing.
  */
-export const QnProgress = React.memo(({ count, limit, size }) => {
+export const QnProgress = React.memo(({ count = 0, limit = 1, size }) => {
   const progress = Math.min(1, count / (limit || 1));
   const isLarge = size === 'LARGE';
 
@@ -100,7 +100,7 @@ export const SmokingProgress = React.memo(({ count, limit, variant, size }) => {
 /**
  * RingProgress - Performance Updated
  */
-export const RingProgress = React.memo(({ count, limit, size }) => {
+export const RingProgress = React.memo(({ count = 0, limit = 1, size }) => {
   const progress = Math.min(1, count / (limit || 1));
   const radius = 30;
   const circum = 2 * Math.PI * radius;
@@ -130,7 +130,7 @@ export const RingProgress = React.memo(({ count, limit, size }) => {
 /**
  * GenericBarProgress - Performance Updated
  */
-export const GenericBarProgress = React.memo(({ count, limit, size }) => {
+export const GenericBarProgress = React.memo(({ count = 0, limit = 1, size }) => {
   const progress = Math.min(1, count / (limit || 1));
   const isLarge = size === 'LARGE';
   return (
