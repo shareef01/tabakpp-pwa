@@ -3,31 +3,35 @@ import { motion } from 'framer-motion';
 import { cn } from '../../utils/utils';
 
 /**
- * Hyper-Realistic Burning Tip
- * Ultra-precise plasma line with soft atmospheric bloom.
+ * High-Fidelity Combustion Core
+ * Realistic intense heat point with atmospheric diffusion.
  */
-const BurningTip = ({ isDanger }) => (
-  <div className="absolute left-[-1px] top-0 bottom-0 w-3 flex items-center justify-center z-30 pointer-events-none">
-    {/* Plasma Hot-Spot */}
+const CombustionCore = ({ isDanger }) => (
+  <div className="absolute left-[-2px] inset-y-0 w-2 flex items-center justify-center z-40 pointer-events-none">
+    {/* Intense Ignition Point */}
     <motion.div
-      animate={{ opacity: [0.7, 1, 0.7] }}
-      transition={{ duration: 0.8, repeat: Infinity }}
-      className={cn("w-[1.5px] h-[95%] blur-[0.3px] rounded-full shadow-[0_0_8px_var(--accent)]", isDanger ? "bg-red-400 shadow-red-500" : "bg-white shadow-accent")}
+      animate={{ opacity: [0.7, 1, 0.7], scale: [0.95, 1.05, 0.95] }}
+      transition={{ duration: 1.2, repeat: Infinity }}
+      className={cn("w-[2.5px] h-[92%] rounded-full blur-[0.4px]", isDanger ? "bg-red-300 shadow-[0_0_8px_#f87171]" : "bg-white shadow-[0_0_10px_var(--accent)]")}
     />
-    {/* Inner Combustion Glow */}
-    <div className={cn("absolute inset-y-0 left-0 w-2 blur-sm rounded-l-full", isDanger ? "bg-red-600/40" : "bg-accent/40")} />
-    {/* Outer Atmospheric Bloom */}
+    {/* Atmospheric Bloom */}
     <motion.div
-      animate={{ scaleY: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }}
-      transition={{ duration: 2, repeat: Infinity }}
-      className={cn("absolute -left-3 w-10 h-14 blur-xl rounded-full", isDanger ? "bg-red-600" : "bg-accent")}
+      animate={{ opacity: [0.1, 0.3, 0.1] }}
+      transition={{ duration: 3, repeat: Infinity }}
+      className={cn("absolute -left-6 w-16 h-20 blur-2xl rounded-full", isDanger ? "bg-red-600" : "bg-accent")}
     />
   </div>
 );
 
 /**
- * RyoRollProgress (Hand-Rolled Mastery)
- * Captures the organic, "perfectly imperfect" twisted cone look.
+ * 3D Texture Overlays
+ */
+const PaperTexture = () => <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/pulp.png')] pointer-events-none" />;
+const JointTexture = () => <div className="absolute inset-0 opacity-[0.04] bg-[url('https://www.transparenttextures.com/patterns/rice-paper.png')] pointer-events-none" />;
+
+/**
+ * RyoRollProgress (Organic Hand-Rolled)
+ * Sophisticated "Cone-Cylinder" hybrid with manual fold geometry.
  */
 export const RyoRollProgress = React.memo(({ count, limit, size }) => {
   const isOver = count >= limit;
@@ -36,32 +40,30 @@ export const RyoRollProgress = React.memo(({ count, limit, size }) => {
   const isLarge = size === 'LARGE';
 
   return (
-    <div className={cn("relative flex items-center justify-end group", isLarge ? "w-48 h-10" : "w-36 h-8")}>
-      {/* Ambient Shadow for depth */}
-      <div className="absolute inset-x-2 bottom-0 h-2 bg-black/40 blur-md rounded-full translate-y-2 opacity-40" />
+    <div className={cn("relative flex items-center justify-end", isLarge ? "w-48 h-10" : "w-36 h-7")}>
+      {/* Ground Shadow */}
+      <div className="absolute inset-x-4 bottom-[-6px] h-2 bg-black/60 blur-lg rounded-full opacity-30" />
 
       <div className="flex-1 h-full flex items-center justify-end relative overflow-visible">
         <motion.div
           initial={{ width: '100%' }}
           animate={{ width: `${remaining * 100}%` }}
           className="h-[80%] relative origin-right will-change-[width]"
-          transition={{ type: 'spring', damping: 25, stiffness: 120 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 140 }}
           style={{
-            // Organic twisted cone: Wide at burning tip, thin at filter
-            clipPath: 'polygon(0% 5%, 100% 20%, 100% 80%, 0% 95%)',
-            background: 'linear-gradient(180deg, #f3f4f6 0%, #ffffff 40%, #f9fafb 60%, #d1d5db 100%)',
+            clipPath: 'polygon(0% 2%, 100% 12%, 100% 88%, 0% 98%)',
+            background: 'linear-gradient(180deg, #ffffff 0%, #f7f7f7 35%, #e5e7eb 65%, #cbd5e1 100%)',
           }}
         >
-          {/* Subtle Paper Texture */}
-          <div className="absolute inset-0 opacity-[0.04] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]" />
-          <BurningTip isDanger={isOver} />
+          <PaperTexture />
+          <CombustionCore isDanger={isOver} />
         </motion.div>
       </div>
 
-      {/* Dark Roach (Filter) */}
+      {/* RYO Integrated Roach */}
       <div
-        className="w-8 h-[55%] bg-[#1a1a1a] border-l border-black/50 relative shadow-inner overflow-hidden"
-        style={{ clipPath: 'polygon(0% 15%, 100% 30%, 100% 70%, 0% 85%)' }}
+        className="w-10 h-[58%] bg-[#121212] border-l border-black/40 relative shadow-inner"
+        style={{ clipPath: 'polygon(0% 12%, 100% 28%, 100% 72%, 0% 88%)' }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent" />
       </div>
@@ -71,7 +73,7 @@ export const RyoRollProgress = React.memo(({ count, limit, size }) => {
 
 /**
  * JointProgress (King/Queen Conical Elegance)
- * Specialized cone geometry with translucent paper feel.
+ * Professional cone silhouette with translucent paper feel.
  */
 const JointProgress = React.memo(({ count, limit, variant, size }) => {
   const isOver = count >= limit;
@@ -81,30 +83,29 @@ const JointProgress = React.memo(({ count, limit, variant, size }) => {
   const isQueen = variant === 'QUEEN';
 
   return (
-    <div className={cn("relative flex items-center justify-end group", isLarge ? (isQueen ? "w-52 h-12" : "w-60 h-10") : (isQueen ? "w-40 h-9" : "w-48 h-8"))}>
-      <div className="absolute inset-x-4 bottom-0 h-3 bg-black/50 blur-xl rounded-full translate-y-3 opacity-30" />
+    <div className={cn("relative flex items-center justify-end group", isLarge ? (isQueen ? "w-52 h-11" : "w-64 h-9") : (isQueen ? "w-36 h-8" : "w-44 h-7"))}>
+      <div className="absolute inset-x-6 bottom-[-8px] h-2.5 bg-black/70 blur-xl rounded-full opacity-25" />
 
       <div className="flex-1 h-full flex items-center justify-end relative overflow-visible">
         <motion.div
           initial={{ width: '100%' }}
           animate={{ width: `${remaining * 100}%` }}
           className="h-full relative origin-right"
-          transition={{ type: 'spring', damping: 25, stiffness: 120 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 140 }}
           style={{
-            clipPath: 'polygon(0% 0%, 100% 30%, 100% 70%, 0% 100%)',
-            background: 'linear-gradient(180deg, #ffffff 0%, #f7f7f7 45%, #eeeeee 55%, #cccccc 100%)',
+            clipPath: 'polygon(0% 0%, 100% 32%, 100% 68%, 0% 100%)',
+            background: 'linear-gradient(180deg, #ffffff 0%, #fcfcfc 40%, #eeeeee 60%, #cccccc 100%)',
           }}
         >
-          {/* Rice Paper Grain */}
-          <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/rice-paper.png')]" />
-          <BurningTip isDanger={isOver} />
+          <JointTexture />
+          <CombustionCore isDanger={isOver} />
         </motion.div>
       </div>
 
-      {/* Long Card Roach */}
+      {/* Card Roach (Filter) */}
       <div
-        className="w-14 h-[40%] bg-neutral-900 border-l border-black/60 relative shadow-inner overflow-hidden"
-        style={{ clipPath: 'polygon(0% 0%, 100% 10%, 100% 90%, 0% 100%)' }}
+        className="w-16 h-[36%] bg-[#0a0a0a] border-l border-black/50 relative shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]"
+        style={{ clipPath: 'polygon(0% 0%, 100% 5%, 100% 95%, 0% 100%)' }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent" />
       </div>
@@ -113,8 +114,8 @@ const JointProgress = React.memo(({ count, limit, variant, size }) => {
 });
 
 /**
- * SmokingProgress (Schachtel Precision)
- * Cylindrical factory-standard look with refined cork filter.
+ * SmokingProgress (Factory Standard)
+ * Ultra-realistic cylinder with Marlboro-inspired matte filter.
  */
 export const SmokingProgress = React.memo(({ count, limit, variant, size }) => {
   if (variant === 'KING' || variant === 'QUEEN') {
@@ -127,35 +128,35 @@ export const SmokingProgress = React.memo(({ count, limit, variant, size }) => {
   const isLarge = size === 'LARGE';
 
   return (
-    <div className={cn("relative flex items-center justify-end group", isLarge ? "w-56 h-11" : "w-44 h-8")}>
-      {/* Soft Ground Shadow */}
-      <div className="absolute inset-x-4 bottom-0 h-2 bg-black/60 blur-xl rounded-full translate-y-3 opacity-40" />
+    <div className={cn("relative flex items-center justify-end", isLarge ? "w-60 h-10" : "w-48 h-8")}>
+      <div className="absolute inset-x-6 bottom-[-10px] h-3 bg-black/80 blur-2xl rounded-full opacity-40" />
 
-      {/* Main Body */}
+      {/* Factory Cylinder Body */}
       <div className="flex-1 h-full flex items-center justify-end relative">
         <motion.div
           initial={{ width: '100%' }}
           animate={{ width: `${remaining * 100}%` }}
-          className="h-full relative origin-right will-change-[width] shadow-xl"
-          transition={{ type: 'spring', damping: 25, stiffness: 150 }}
+          className="h-full relative origin-right will-change-[width] shadow-2xl"
+          transition={{ type: 'spring', damping: 28, stiffness: 140 }}
           style={{
-            background: 'linear-gradient(180deg, #ffffff 0%, #fcfcfc 40%, #f0f0f0 60%, #e0e0e0 100%)',
-            borderRadius: '2px 0 0 2px'
+            background: 'linear-gradient(180deg, #ffffff 0%, #fdfdfd 42%, #f1f1f1 58%, #e0e0e0 100%)',
+            borderRadius: '1.5px 0 0 1.5px'
           }}
         >
-          <BurningTip isDanger={isOver} />
+          <CombustionCore isDanger={isOver} />
         </motion.div>
       </div>
 
-      {/* Refined Cork Filter */}
-      <div className="w-16 h-full bg-[#f4a261] rounded-r-[3px] border-l border-black/10 relative overflow-hidden">
-        {/* Fine Cork Noise */}
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#8b4513_0.8px,transparent_0.8px)] bg-[length:3px_3px]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-black/25" />
+      {/* Refined "Cork-Matte" Filter */}
+      <div className="w-18 h-full bg-[#f2a154] rounded-r-[3px] border-l border-black/10 relative overflow-hidden">
+        {/* Organic Noise Gradient */}
+        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#8b4513_0.5px,transparent_0.5px)] bg-[length:2.5px_2.5px]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/15 via-transparent to-black/30" />
 
-        {/* High-Fidelity Gold Band */}
-        <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-[#d4af37] shadow-[1px_0_3px_rgba(0,0,0,0.2)]" />
-        <div className="absolute left-[5px] top-0 bottom-0 w-[1.5px] bg-black/10" />
+        {/* Luxury Gold/Silver Separator Band */}
+        <div className="absolute left-0 inset-y-0 w-[4.5px] bg-gradient-to-r from-[#d4af37] via-[#f5e050] to-[#c5a028] shadow-[1px_0_4px_rgba(0,0,0,0.3)] z-10" />
+        {/* Fine Detail Line */}
+        <div className="absolute left-[6px] inset-y-0 w-[1px] bg-black/15 z-10" />
       </div>
     </div>
   );
