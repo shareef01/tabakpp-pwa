@@ -9,12 +9,20 @@ import { cn } from '../../utils/utils';
 import { formatDateDisplay } from '../../utils/formatters';
 import { safeAsync } from '../../utils/errorHandlers';
 import { ConfirmModal } from '../modals/ConfirmModal';
+import { MetricInfoModal } from '../modals/MetricInfoModal';
 
 /**
  * Premium Metric Block
  */
-const InsightCard = React.memo(({ icon: Icon, label, val, sub, color }) => (
-  <div className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 p-6 rounded-2xl flex flex-col items-center justify-center text-center shadow-lg transition-all hover:border-white/10 group h-full">
+const InsightCard = React.memo(({ icon: Icon, label, val, sub, color, onInfo }) => (
+  <div className="bg-neutral-900/40 backdrop-blur-xl border border-white/5 p-6 rounded-2xl flex flex-col items-center justify-center text-center shadow-lg transition-all hover:border-white/10 group h-full relative overflow-hidden">
+     <button
+       onClick={onInfo}
+       className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-600 hover:text-white hover:bg-white/5 transition-all opacity-0 group-hover:opacity-100"
+     >
+       <Info size={14} />
+     </button>
+
      <div className={cn("p-3 rounded-xl bg-white/5 mb-4 shadow-inner border border-white/10 group-hover:scale-110 transition-transform duration-500", color)}>
        <Icon size={20} />
      </div>
@@ -32,6 +40,7 @@ const InsightCard = React.memo(({ icon: Icon, label, val, sub, color }) => (
 
 export const HistoryScreen = React.memo(({ logs, m, onEdit, userId, today }) => {
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [infoType, setInfoType] = useState(null);
 
   const handlePurge = async () => {
     if (!deleteTarget) return;
@@ -77,9 +86,9 @@ export const HistoryScreen = React.memo(({ logs, m, onEdit, userId, today }) => 
 
        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
          <div className="lg:col-span-4 grid grid-cols-3 lg:grid-cols-1 gap-4 lg:gap-6">
-           <InsightCard icon={TrendingUp} label="Streak" val={m.streak} sub="Days" color="text-amber-400" />
-           <InsightCard icon={Wallet} label="Saved" val={`$${(m.savings ?? 0).toFixed(2)}`} sub="Capital" color="text-emerald-400" />
-           <InsightCard icon={Activity} label="Health" val={`${Math.floor((m.lost ?? 0)/60)}H`} sub="Recovered" color="text-rose-400" />
+           <InsightCard icon={TrendingUp} label="Streak" val={m.streak} sub="Days" color="text-amber-400" onInfo={() => setInfoType('streak')} />
+           <InsightCard icon={Wallet} label="Saved" val={`$${(m.savings ?? 0).toFixed(2)}`} sub="Capital" color="text-emerald-400" onInfo={() => setInfoType('saved')} />
+           <InsightCard icon={Activity} label="Health" val={`${Math.floor((m.lost ?? 0)/60)}H`} sub="Recovered" color="text-rose-400" onInfo={() => setInfoType('health')} />
          </div>
 
          <div className="lg:col-span-8 bg-neutral-900/40 backdrop-blur-xl border border-white/5 p-8 lg:p-10 rounded-[32px] shadow-xl">
@@ -120,6 +129,12 @@ export const HistoryScreen = React.memo(({ logs, m, onEdit, userId, today }) => 
          title="Purge Record?"
          message="This data will be permanently removed from the cloud ledger."
          confirmText="Purge"
+       />
+
+       <MetricInfoModal
+         isOpen={!!infoType}
+         onClose={() => setInfoType(null)}
+         type={infoType}
        />
     </motion.div>
   );
