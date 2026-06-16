@@ -5,6 +5,7 @@
 
 /**
  * Sanitizes user-generated strings to prevent XSS and NoSQL injection patterns.
+ * Legacy support for 'sanitizeString' alias.
  * @param {string} str - Raw input
  * @returns {string} Sanitized output
  */
@@ -16,6 +17,8 @@ export const sanitizeInput = (str) => {
     .trim()
     .substring(0, 100); // Enforce reasonable length limits
 };
+
+export const sanitizeString = sanitizeInput;
 
 /**
  * Validates numeric inputs to ensure they are within safe architectural bounds.
