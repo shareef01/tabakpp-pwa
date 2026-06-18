@@ -1,6 +1,6 @@
 import {
   collection, doc, setDoc, updateDoc, deleteDoc,
-  query, onSnapshot, orderBy, writeBatch, limit, serverTimestamp
+  query, onSnapshot, orderBy, writeBatch, limit, serverTimestamp, increment
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -66,10 +66,38 @@ export const RegistryService = {
     }, onError);
   },
 
+  /**
+   * Atomic Counter Update
+   * Uses Firestore updateDoc with dot-notation and increment() for true atomicity.
+   * Handles "upsert" by falling back to setDoc if the daily log doesn't exist.
+   */
+  incrementCounter: async (uid, date, counterId, amount = 1) => {
+    if (!uid || !date || !counterId) throw new Error("INVALID_PAYLOAD");
+    const ref = doc(db, 'users', uid, 'logs', date);
+
+    try {
+      // Attempt atomic nested update using dot-notation
+      await updateDoc(ref, {
+        [`counts.${counterId}`]: increment(amount),
+        lastSync: serverTimestamp()
+      });
+    } catch (e) {
+      // If the document doesn't exist (first click of the day), we must initialize it
+      if (e.code === 'not-found') {
+        await setDoc(ref, {
+          counts: { [counterId]: Math.max(0, amount) },
+          logDate: date,
+          lastSync: serverTimestamp()
+        }, { merge: true });
+      } else {
+        throw e;
+      }
+    }
+  },
+
   updateDailyLog: async (uid, date, counts) => {
     if (!uid || !date) throw new Error("INVALID_PAYLOAD");
     const ref = doc(db, 'users', uid, 'logs', date);
-    // Use setDoc with merge to ensure the document exists
     return setDoc(ref, {
       counts,
       lastSync: serverTimestamp()

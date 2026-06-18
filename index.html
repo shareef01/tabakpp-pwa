@@ -11,14 +11,14 @@
     <meta http-equiv="Expires" content="0" />
 
     <!-- PWA Primary Meta Tags -->
-    <title>TABAK++ BETA</title>
+    <title>TABAK</title>
     <meta name="theme-color" content="#020202" />
     <link rel="manifest" href="/manifest.json" />
 
     <!-- iOS Specific PWA Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="TABAK++ BETA" />
+    <meta name="apple-mobile-web-app-title" content="TABAK" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
 
     <!-- Google Fonts: Inter -->
@@ -26,12 +26,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 
+    <script>
+      // Force unregister any lingering service workers to prevent stale PWA behavior
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (let registration of registrations) { registration.unregister(); }
+        });
+      }
+    </script>
+
     <style>
       :root {
         --bg-base: #020202;
-        --accent: #D4FF32;
+        --accent: #00D1FF;
       }
-      body {
+      html, body {
         margin: 0;
         background-color: var(--bg-base);
         color: white;
@@ -39,9 +48,13 @@
         -webkit-font-smoothing: antialiased;
         overflow-x: hidden;
         overscroll-behavior-y: none;
+        /* iOS Height Fix */
+        height: -webkit-fill-available;
+        min-height: 100%;
       }
       #root {
         min-height: 100vh;
+        min-height: 100dvh;
         display: flex;
         flex-direction: column;
       }

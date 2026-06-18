@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutGrid, BarChart3, Settings, AlertCircle, Loader2 } from 'lucide-react';
 import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
 import { auth, db } from './firebase';
 
 // --- UTILS ---
@@ -19,15 +20,9 @@ import { LogoutModal } from './components/modals/Modals';
 import { DashboardSkeleton } from './components/dashboard/DashboardSkeleton';
 import { ProtocolFormOverlay } from './components/modals/ProtocolFormOverlay';
 import { EditOverlay } from './components/modals/EditOverlay';
+import { UI } from './components/Common';
 
-// --- LAZY LOADED SCREENS (Code Splitting with Auto-Retry) ---
-/**
- * Utility for lazy loading components with an automatic retry mechanism.
- * Forces a hard refresh if the chunk fails to load (e.g., due to network issues or new deployment).
- *
- * @param {Function} componentImport - A function that returns a dynamic import promise.
- * @returns {React.LazyExoticComponent} A lazy-loaded React component.
- */
+// --- LAZY LOADED SCREENS ---
 const lazyWithRetry = (componentImport) => lazy(async () => {
   try {
     return await componentImport();
@@ -45,58 +40,60 @@ const HistoryScreen = lazyWithRetry(() => import('./components/history/HistorySc
 const SettingsScreen = lazyWithRetry(() => import('./components/settings/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 
 // --- GLOBAL CONSTANTS ---
-const APP_VERSION = "BETA-29.9.1-TITAN-RESTORE";
+const APP_VERSION = "30.1.5-POLISHED";
 
 // --- GLOBAL COMPONENTS ---
 
-/**
- * A full-screen loading view displayed during authentication or synchronization.
- * Includes a spinning loader and animated text.
- */
 const LoadingView = () => (
-  <div className="min-h-screen w-full bg-[#020202] flex flex-col items-center justify-center space-y-12 text-white font-inter font-black">
-    <Loader2 className="animate-spin text-rose-600" size={100} strokeWidth={3} />
-    <span className="text-sm font-black tracking-[1.5em] uppercase text-white/40 animate-pulse ml-[1.2em]">Synchronizing</span>
+  <div className="min-h-screen w-full bg-[#020202] flex flex-col items-center justify-center space-y-8 text-white font-inter">
+    <Loader2 className="animate-spin text-accent" size={64} strokeWidth={3} />
+    <span className="text-xs font-black tracking-[1em] uppercase text-white/20 animate-pulse">Syncing</span>
   </div>
 );
 
-/**
- * Navigation Button component for the bottom navigation bar.
- *
- * @param {Object} props
- * @param {string} props.id - Unique identifier for the tab.
- * @param {React.ElementType} props.icon - Lucide icon component.
- * @param {string} props.label - Display label for the button.
- * @param {boolean} props.active - Whether the tab is currently active.
- * @param {Function} props.onClick - Click handler for the button.
- */
 const NavBtn = React.memo(({ id, icon: Icon, label, active, onClick }) => (
-  <button onClick={onClick} className="relative flex-1 py-3 flex flex-col items-center gap-1.5 group transition-all duration-500 font-inter text-white">
-    <div className={cn("absolute -top-3 w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_12px_var(--accent)] transition-all duration-500", active ? "opacity-100 scale-100" : "opacity-0 scale-0")} />
-    <Icon size={24} className={cn("transition-all duration-500", active ? "text-accent scale-110 drop-shadow-[0_0_100px_var(--accent-rgb)]" : "text-white/60 group-hover:text-white/90")} strokeWidth={active ? 3 : 2} />
-    <span className={cn("text-[9px] font-black uppercase tracking-[0.3em] transition-all duration-500 font-inter", active ? "text-white opacity-100" : "text-white/60 opacity-0 group-hover:opacity-90 translate-y-2 group-hover:translate-y-0 font-inter")}>{label}</span>
+  <button onClick={onClick} className="relative flex-1 py-4 flex flex-col items-center gap-1.5 group transition-all duration-300 text-white h-full border-none bg-transparent">
+    {/* ACTIVE STATE: Subtle glowing accent line above icon */}
+    <motion.div
+      initial={false}
+      animate={{
+        opacity: active ? 1 : 0,
+        scaleX: active ? 1 : 0,
+        y: active ? 0 : -4
+      }}
+      className="absolute top-0 w-8 h-1 rounded-b-full bg-accent shadow-[0_4px_12px_var(--accent)]"
+    />
+
+    <Icon
+      size={24}
+      className={cn(
+        "transition-all duration-300",
+        active ? "text-accent scale-110 drop-shadow-[0_0_15px_var(--accent-rgb)]" : "text-neutral-500 group-hover:text-neutral-300"
+      )}
+      strokeWidth={active ? 3 : 2}
+    />
+
+    {/* ACTIVE STATE: Revealed small text label */}
+    <span className={cn(
+      "text-[9px] font-[1000] uppercase tracking-widest transition-all duration-300",
+      active ? "text-white opacity-100 translate-y-0" : "text-neutral-500 opacity-0 translate-y-1"
+    )}>
+      {label}
+    </span>
   </button>
 ));
 
 // --- ERROR BOUNDARY ---
-/**
- * Catch-all component for handling fatal application errors.
- * Displays a fallback UI and provides a system reset option.
- */
 class GlobalErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
   static getDerivedStateFromError(error) { return { hasError: true, error }; }
-  componentDidCatch(error, info) { console.error("FATAL_APP_CRASH:", error, info); }
   render() {
     if (this.state.hasError) {
-      const isChunkError = this.state.error?.toString().includes("loading dynamically imported module");
-      if (isChunkError) { window.location.reload(); return null; }
       return (
-        <div className="min-h-screen w-full bg-[#020202] flex flex-col items-center justify-center p-12 text-center text-white font-inter">
-          <div className="p-8 bg-danger/10 rounded-[32px] text-danger border border-danger/20 shadow-2xl mb-8"><AlertCircle size={48} /></div>
-          <h2 className="text-3xl font-[1000] uppercase tracking-tighter leading-none mb-4 font-inter">System Error</h2>
-          <p className="text-white/60 text-sm mb-10 max-w-md font-bold leading-relaxed">{this.state.error?.toString() || "Sync failed."}</p>
-          <button onClick={() => { localStorage.clear(); sessionStorage.clear(); window.location.href = window.location.origin + '?cache-bust=' + Date.now(); }} className="px-10 h-18 rounded-full bg-white text-black font-black uppercase tracking-widest active:scale-95 transition-all shadow-2xl">Reset System</button>
+        <div className="min-h-screen w-full bg-[#020202] flex flex-col items-center justify-center p-8 text-center text-white font-inter">
+          <div className="p-6 bg-danger/10 rounded-3xl border border-danger/20 mb-8"><AlertCircle size={48} className="text-danger" /></div>
+          <h2 className="text-2xl font-black uppercase tracking-tighter mb-4">Architecture Failure</h2>
+          <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="px-8 h-14 rounded-full bg-white text-black font-black uppercase tracking-widest">Reset System</button>
         </div>
       );
     }
@@ -106,27 +103,22 @@ class GlobalErrorBoundary extends React.Component {
 
 // --- ARCHITECTURAL CORE ---
 
-/**
- * The main content wrapper for the application.
- * Manages authentication state, user settings, real-time registry synchronization, and routing.
- */
 const AppContent = () => {
   const { user, loading: authLoading } = useAuth();
 
-  /**
-   * Architectural Cache Busting:
-   * Forces a hard reload if a version mismatch is detected between local storage and server build time.
-   */
   useEffect(() => {
     const localBuildId = localStorage.getItem('tabak_build_id');
     const serverBuildId = String(typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : 'initial');
 
-    console.log(`[SYS] V:${APP_VERSION} | B:${serverBuildId}`);
-
     if (localBuildId && localBuildId !== serverBuildId) {
-      console.warn("[SYS] STALE_BUILD_DETECTED: Force-synchronizing UI...");
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          for (let name of names) caches.delete(name);
+        });
+      }
       localStorage.setItem('tabak_build_id', serverBuildId);
-      window.location.replace(window.location.origin + '?v=' + serverBuildId);
+      sessionStorage.clear();
+      window.location.replace(window.location.origin + window.location.pathname + '?v=' + serverBuildId);
     } else {
       localStorage.setItem('tabak_build_id', serverBuildId);
     }
@@ -134,16 +126,20 @@ const AppContent = () => {
 
   const [settings, setSettings] = useState({
     accent: localStorage.getItem('tabak_accent') || '#00D1FF',
-    widgetSize: 'LARGE',
+    widgetSize: 'MEDIUM',
     avatar: null,
+    name: '',
     unitPrice: 0.5
   });
+
+  const responsiveUser = useMemo(() => ({
+    ...user,
+    displayName: settings.name || user?.displayName,
+    photoURL: settings.avatar || user?.photoURL
+  }), [user, settings.name, settings.avatar]);
+
   const [isHydrated, setIsHydrated] = useState(false);
   const today = useMemo(() => new Date().toISOString().split('T')[0], []);
-
-  /**
-   * Main registry hook for managing logs, metrics, and protocols.
-   */
   const registry = useRegistry(user, today, settings.unitPrice);
 
   const {
@@ -158,13 +154,6 @@ const AppContent = () => {
   const [showLogout, setShowLogout] = useState(false);
 
   useEffect(() => {
-    if (!user) { setShowLogout(false); setShowAdd(false); setEditTarget(null); setEditProtocol(null); }
-  }, [user]);
-
-  /**
-   * Subscribes to real-time updates for the user's profile and settings in Firestore.
-   */
-  useEffect(() => {
     if (!user) return;
     return onSnapshot(doc(db, 'users', user.uid), (s) => {
       if (s.exists()) {
@@ -172,9 +161,10 @@ const AppContent = () => {
         if (d.accent) localStorage.setItem('tabak_accent', d.accent);
         setSettings(p => ({
           ...p,
-          accent: d.accent || '#D4FF32',
-          widgetSize: d.widgetSize || 'LARGE',
+          accent: d.accent || '#00D1FF',
+          widgetSize: d.widgetSize || 'MEDIUM',
           avatar: d.avatar || null,
+          name: d.name || user.displayName || '',
           unitPrice: d.unitPrice ?? 0.5
         }));
       }
@@ -183,70 +173,63 @@ const AppContent = () => {
   }, [user]);
 
   const onUpdateSettings = useCallback(async (upd) => {
-    if (!user) return;
+    if (!user || !auth.currentUser) return;
     try {
+      if (upd.name || upd.avatar) {
+        await updateProfile(auth.currentUser, { displayName: upd.name, photoURL: upd.avatar });
+      }
       await updateDoc(doc(db, 'users', user.uid), upd);
-      if (upd.accent) localStorage.setItem('tabak_accent', upd.accent);
     } catch (e) { console.error(e); }
   }, [user]);
 
-  const handleAddProtocol = async (data) => {
-    try { await addProtocol(data); setShowAdd(false); } catch (e) { console.error(e); }
-  };
-
-  const handleUpdateProtocol = async (data) => {
-    try { await updateProtocol(editProtocol.id, data); setEditProtocol(null); } catch (e) { console.error(e); }
-  };
-
   if (authLoading) return <LoadingView />;
 
-  const gridClasses = {
-    SMALL: "grid-cols-2 lg:grid-cols-6 gap-4",
-    MEDIUM: "grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6",
-    LARGE: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
-  };
-
   return (
-    <div className="min-h-screen w-full bg-[#020202] text-white font-inter selection:bg-accent/30 overflow-x-hidden flex flex-col font-inter" style={{ '--accent': settings.accent, '--accent-rgb': hexToRgbValues(settings.accent) }}>
+    <div className="min-h-screen w-full bg-[#020202] text-white font-inter selection:bg-accent/30 overflow-x-hidden flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]" style={{ '--accent': settings.accent, '--accent-rgb': hexToRgbValues(settings.accent) }}>
       {!user ? (
         <Suspense fallback={<LoadingView />}>
           <AuthScreen accent={settings.accent} />
         </Suspense>
       ) : (
         <>
-          <TopBanner user={{...user, photoURL: settings.avatar || user.photoURL}} onNavigate={setActiveTab} widgetSize={settings.widgetSize} onUpdateSettings={onUpdateSettings} onRequestLogout={() => setShowLogout(true)} />
+          <TopBanner user={responsiveUser} onNavigate={setActiveTab} widgetSize={settings.widgetSize} onUpdateSettings={onUpdateSettings} onRequestLogout={() => setShowLogout(true)} />
 
-          <main className="flex-1 overflow-y-auto pt-8 pb-[calc(env(safe-area-inset-bottom)+10rem)] w-full transition-all duration-500 overflow-x-hidden font-inter">
-            <div className="max-w-7xl mx-auto w-full px-4 lg:px-8">
+          <main className="flex-1 overflow-y-auto pt-6 pb-28 md:pb-24 transition-all duration-300 overflow-x-hidden">
+            <div className={UI.MAX_CONTAINER}>
               <Suspense fallback={<LoadingView />}>
                 <AnimatePresence mode="wait">
                   {activeTab === 'track' && (
-              <motion.div key="track" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8 font-inter min-h-[600px]">
-                {!isHydrated || registryLoading ? (
-                  <DashboardSkeleton widgetSize={settings.widgetSize} />
-                ) : (
-                  <>
-                    <div className={cn("grid transition-all duration-500", gridClasses[settings.widgetSize] || gridClasses.LARGE)}>
-                      {configs.sort((a,b)=>a.order-b.order).map((c, i) => (
-                        <TrackerCard key={c.id} config={c} count={(metrics.todayLog?.counts || {})[c.id] || 0} onInc={() => increment(c.id)} onDec={() => decrement(c.id)} index={i} globalSize={settings.widgetSize} />
-                      ))}
-                    </div>
-                    <div className="w-full">
-                      <MetricBanner m={metrics} />
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            )}
+                    <motion.div key="track" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-10">
+                      {registryError && <div className="mb-8 p-4 bg-danger/10 border border-danger/20 rounded-2xl text-danger text-[10px] font-[1000] uppercase text-center mb-8">Sync Error: {registryError}</div>}
+
+                      {!isHydrated || registryLoading ? (
+                        <DashboardSkeleton widgetSize={settings.widgetSize} />
+                      ) : (
+                        <div className="flex flex-col gap-10 w-full">
+                           <div className="w-full">
+                              <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 md:gap-8 transition-all duration-300 items-stretch">
+                                {configs.sort((a,b)=>a.order-b.order).map((c, i) => (
+                                  <TrackerCard key={c.id} config={c} count={(metrics.todayLog?.counts || {})[c.id] || 0} onInc={() => increment(c.id)} onDec={() => decrement(c.id)} index={i} globalSize={settings.widgetSize} />
+                                ))}
+                              </div>
+                           </div>
+
+                           <div className="w-full">
+                              <MetricBanner m={metrics} widgetSize={settings.widgetSize} />
+                           </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
                   {activeTab === 'history' && <HistoryScreen logs={logs} m={metrics} onEdit={setEditTarget} userId={user.uid} today={today} />}
-                  {activeTab === 'control' && <SettingsScreen configs={configs} user={user} settings={settings} onAdd={() => setShowAdd(true)} onReo={reorder} onEditP={setEditProtocol} onUpd={onUpdateSettings} onDel={deleteProtocol} />}
+                  {activeTab === 'control' && <SettingsScreen configs={configs} user={responsiveUser} settings={settings} onAdd={() => setShowAdd(true)} onReo={reorder} onEditP={setEditProtocol} onUpd={onUpdateSettings} onDel={deleteProtocol} />}
                 </AnimatePresence>
               </Suspense>
             </div>
           </main>
 
-          <nav className="fixed bottom-0 left-0 right-0 z-[100] bg-[#020202]/80 backdrop-blur-3xl border-t border-white/[0.03] pb-[env(safe-area-inset-bottom)] px-6 font-inter">
-            <div className="max-w-xl mx-auto flex items-center justify-around h-20 text-white">
+          <nav className="fixed bottom-0 left-0 right-0 z-[100] bg-neutral-900/80 backdrop-blur-3xl border-t border-white/[0.05] pb-[env(safe-area-inset-bottom)] px-6 h-20">
+            <div className="max-w-[1200px] mx-auto flex items-center justify-around h-full text-white">
               <NavBtn id="track" icon={LayoutGrid} label="Track" active={activeTab === 'track'} onClick={() => setActiveTab('track')} />
               <NavBtn id="history" icon={BarChart3} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
               <NavBtn id="control" icon={Settings} label="Settings" active={activeTab === 'control'} onClick={() => setActiveTab('control')} />
@@ -254,38 +237,10 @@ const AppContent = () => {
           </nav>
 
           <AnimatePresence>
-            {showLogout && (
-              <LogoutModal
-                isOpen={showLogout}
-                onClose={() => setShowLogout(false)}
-                onConfirm={() => { setShowLogout(false); auth.signOut(); }}
-              />
-            )}
-            {showAdd && (
-              <ProtocolFormOverlay
-                isOpen={showAdd}
-                onClose={() => setShowAdd(false)}
-                onApply={handleAddProtocol}
-                title="Create Counter"
-              />
-            )}
-            {editProtocol && (
-              <ProtocolFormOverlay
-                isOpen={!!editProtocol}
-                onClose={() => setEditProtocol(null)}
-                onApply={handleUpdateProtocol}
-                title="Configure Counter"
-                initialData={editProtocol}
-              />
-            )}
-            {editTarget && (
-              <EditOverlay
-                log={editTarget}
-                configs={configs}
-                onClose={() => setEditTarget(null)}
-                user={user}
-              />
-            )}
+            {showLogout && <LogoutModal isOpen={showLogout} onClose={() => setShowLogout(false)} onConfirm={() => { setShowLogout(false); auth.signOut(); }} />}
+            {showAdd && <ProtocolFormOverlay isOpen={showAdd} onClose={() => setShowAdd(false)} onApply={async (d) => { await addProtocol(d); setShowAdd(false); }} title="Create" />}
+            {editProtocol && <ProtocolFormOverlay isOpen={!!editProtocol} onClose={() => setEditProtocol(null)} onApply={async (d) => { await updateProtocol(editProtocol.id, d); setEditProtocol(null); }} title="Edit" initialData={editProtocol} />}
+            {editTarget && <EditOverlay log={editTarget} configs={configs} onClose={() => setEditTarget(null)} user={responsiveUser} />}
           </AnimatePresence>
         </>
       )}
@@ -293,10 +248,6 @@ const AppContent = () => {
   );
 };
 
-/**
- * Root Application component.
- * Wraps the app content with the Error Boundary and Authentication Provider.
- */
 const App = () => (
   <GlobalErrorBoundary>
     <AuthProvider>
