@@ -72,7 +72,7 @@ dist/
 .idea/
 
 # Local browser caches (optional screenshot tooling)
-.puppeteer-cache/
+.browsers/
 
 # dataconnect generated files
 .dataconnect

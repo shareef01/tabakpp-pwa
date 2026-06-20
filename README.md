@@ -18,7 +18,9 @@ History turns raw logs into **velocity charts** and streak-style metrics (health
 
 ## Screenshots
 
-| Sign-in & onboarding | Track dashboard (desktop) |
+Captured from the running app (`npm run dev` + `npm run screenshots`).
+
+| Sign-in | Track dashboard (desktop) |
 |---|---|
 | ![TABAK++ sign-in screen](./public/screenshots/app.png) | ![Track dashboard](./public/screenshots/track.png) |
 
