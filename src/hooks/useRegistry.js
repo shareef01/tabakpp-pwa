@@ -1,148 +1,277 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { RegistryService } from '../services/registryService';
-import { SmokingCalculator } from '../utils/smokingCalculator';
+import { RegistryService } from '../api/registryService';
+import { SmokingCalculator, getTrackingDate, DEFAULT_DAY_START_HOUR } from '../utils/logic';
+import { assertFirestoreUid } from '../api/firestoreAuth';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
-/**
- * useRegistry (ViewModel)
- * Performance Hardened: Handles optimistic updates and real-time synchronization.
- */
-export const useRegistry = (user, today, unitPrice = 0.5) => {
-  const [counterProtocols, setCounterProtocols] = useState([]);
-  const [historicalLogs, setHistoricalLogs] = useState([]);
+const INITIAL_STATE = {
+  configs: [],
+  logs: [],
+  metrics: { count: 0, limit: 0, streak: 0, spentToday: 0, budgetLeftToday: 0, saved: 0, savedLifetime: 0, progress: 0, lifeLost: 0, recovered: 0 },
+  userProfile: {},
+  activeCounts: {},
+  loading: true,
+  error: null,
+};
+
+export const useRegistry = (user, trackingDay, dayStartHourOverride) => {
+  const [configs, setConfigs] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [activeCounts, setActiveCounts] = useState({});
+  const [userProfile, setUserProfile] = useState({});
   const [loading, setLoading] = useState(true);
+  const [userReady, setUserReady] = useState(false);
+  const [configsReady, setConfigsReady] = useState(false);
   const [error, setError] = useState(null);
+  const [endingDay, setEndingDay] = useState(false);
+  const [logsTruncated, setLogsTruncated] = useState(false);
+  const counterMutationsRef = useRef(0);
 
-  const [optimisticCounts, setOptimisticCounts] = useState({});
+  const dayStartHour = dayStartHourOverride ?? userProfile?.dayStartHour ?? DEFAULT_DAY_START_HOUR;
 
   useEffect(() => {
     if (!user) {
+      counterMutationsRef.current = 0;
       setLoading(false);
+      setUserReady(false);
+      setConfigsReady(false);
+      setConfigs([]);
+      setLogs([]);
+      setActiveCounts({});
+      setUserProfile({});
+      setLogsTruncated(false);
+      setError(null);
       return;
     }
+
     setLoading(true);
-    const unsubConfigs = RegistryService.subscribeToConfigs(
-      user.uid,
-      (data) => {
-        setCounterProtocols(data.length > 0 ? data : [
-          { id: 'cigarettes', name: 'Cigarettes', limit: 20, type: 'CIGARETTE', price: 0, order: 0, isFinanciallyTracked: true }
-        ]);
-        setLoading(false);
-      },
-      (err) => { setError(err.message); setLoading(false); }
-    );
-    const unsubLogs = RegistryService.subscribeToLogs(
-      user.uid,
-      (data) => {
-        setHistoricalLogs(data);
-        setOptimisticCounts({});
-      },
-      (err) => { setError(err.message); setLoading(false); }
-    );
+    setUserReady(false);
+    setConfigsReady(false);
+    setError(null);
+
+    let cancelled = false;
+    let unsubs = [];
+
+    const bindListeners = (uid) => {
+      const unsubUser = onSnapshot(doc(db, 'users', uid), (s) => {
+        if (s.exists()) {
+          const data = s.data();
+          if (counterMutationsRef.current === 0) {
+            setActiveCounts({ ...(data.activeCounts || {}) });
+          }
+          const { activeCounts: _ac, ...profileFields } = data;
+          setUserProfile(profileFields);
+        } else {
+          if (counterMutationsRef.current === 0) setActiveCounts({});
+          setUserProfile({});
+        }
+        setUserReady(true);
+      }, (err) => {
+        setError(err.message);
+        setUserReady(true);
+      });
+
+      const unsubConfigs = RegistryService.subscribeToConfigs(uid, (data) => {
+        setConfigs(data || []);
+        setConfigsReady(true);
+      }, (err) => {
+        setError(err.message);
+        setConfigsReady(true);
+      });
+
+      const unsubLogs = RegistryService.subscribeToLogs(uid, (data, truncated) => {
+        setLogs(data || []);
+        setLogsTruncated(Boolean(truncated));
+      }, (err) => setError(err.message));
+
+      return [unsubUser, unsubConfigs, unsubLogs];
+    };
+
+    (async () => {
+      try {
+        const authed = await assertFirestoreUid(user.uid);
+        if (cancelled || authed.uid !== user.uid) return;
+        unsubs = bindListeners(authed.uid);
+      } catch (e) {
+        if (!cancelled) {
+          setError(e.message);
+          setUserReady(true);
+          setConfigsReady(true);
+          setLoading(false);
+        }
+      }
+    })();
+
     return () => {
-      unsubConfigs?.();
-      unsubLogs?.();
+      cancelled = true;
+      unsubs.forEach((unsub) => unsub());
     };
   }, [user?.uid]);
 
+  useEffect(() => {
+    if (!user) return;
+    if (userReady && configsReady) setLoading(false);
+  }, [user, userReady, configsReady]);
+
   const metrics = useMemo(() => {
     try {
-      const serverLog = historicalLogs.find(l => l.logDate === today) || { logDate: today, counts: {} };
-      const serverCounts = serverLog.counts || {};
-      const mergedCounts = { ...serverCounts };
-      Object.keys(optimisticCounts).forEach(id => {
-        mergedCounts[id] = (mergedCounts[id] || 0) + optimisticCounts[id];
-      });
-      const todayLog = { ...serverLog, counts: mergedCounts };
-
-      const totalCount = SmokingCalculator.getTotalCount(todayLog, counterProtocols);
-      const totalLimit = SmokingCalculator.getTotalLimit(counterProtocols);
-      const currentStreak = SmokingCalculator.calculateStreak(historicalLogs, counterProtocols);
-      const totalXP = SmokingCalculator.calculateXP(historicalLogs, currentStreak);
-
-      // NEW: Filtered Financials (Task 3)
-      const financials = SmokingCalculator.calculateFinancials(todayLog, counterProtocols, unitPrice);
-
-      return {
-        count: totalCount,
-        limit: totalLimit,
-        streak: currentStreak,
-        xp: totalXP,
-        rank: SmokingCalculator.getRank(totalXP),
-        progress: totalLimit > 0 ? totalCount / totalLimit : 0,
-        wasted: financials.wasted,
-        saved: financials.saved,
-        lost: SmokingCalculator.calculateLifeLostMinutes(historicalLogs, counterProtocols) ?? 0,
-        todayLog
-      };
-    } catch (e) {
-      console.error("[SYS] METRICS_CALC_ERROR:", e);
-      return { count: 0, limit: 1, streak: 0, xp: 0, rank: '...', progress: 0, wasted: 0, saved: 0, todayLog: { counts: {} } };
+      const price = userProfile?.unitPrice ?? 0.5;
+      return SmokingCalculator.getGlobalMetrics(
+        logs,
+        configs,
+        activeCounts,
+        trackingDay,
+        price,
+        userProfile?.lifetimeAggregates
+      );
+    } catch {
+      return INITIAL_STATE.metrics;
     }
-  }, [historicalLogs, counterProtocols, today, unitPrice, optimisticCounts]);
+  }, [logs, configs, trackingDay, activeCounts, userProfile?.unitPrice, userProfile?.lifetimeAggregates]);
 
   const increment = useCallback(async (id) => {
     if (!user) return;
-    setOptimisticCounts(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+    counterMutationsRef.current += 1;
+    setActiveCounts((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
     try {
-      await RegistryService.incrementCounter(user.uid, today, id, 1);
+      await RegistryService.updateLiveCounter(user.uid, id, 1);
     } catch (err) {
-      setOptimisticCounts(prev => ({ ...prev, [id]: (prev[id] || 0) - 1 }));
+      setActiveCounts((prev) => ({ ...prev, [id]: Math.max(0, (prev[id] || 0) - 1) }));
       setError(err.message);
+    } finally {
+      counterMutationsRef.current -= 1;
     }
-  }, [user?.uid, today]);
+  }, [user?.uid]);
 
   const decrement = useCallback(async (id) => {
     if (!user) return;
-    const currentTodayLog = metrics.todayLog;
-    const currentCounts = currentTodayLog.counts || {};
-    if (!currentCounts[id] || currentCounts[id] <= 0) return;
-    setOptimisticCounts(prev => ({ ...prev, [id]: (prev[id] || 0) - 1 }));
+    setActiveCounts((prev) => {
+      if ((prev[id] || 0) <= 0) return prev;
+      return { ...prev, [id]: Math.max(0, (prev[id] || 0) - 1) };
+    });
+    counterMutationsRef.current += 1;
     try {
-      await RegistryService.incrementCounter(user.uid, today, id, -1);
+      await RegistryService.updateLiveCounter(user.uid, id, -1);
     } catch (err) {
-      setOptimisticCounts(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+      setActiveCounts((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
       setError(err.message);
+    } finally {
+      counterMutationsRef.current -= 1;
     }
-  }, [user?.uid, today, metrics.todayLog]);
+  }, [user?.uid]);
+
+  const endDay = useCallback(async () => {
+    if (!user || endingDay) return;
+    setEndingDay(true);
+    const logDate = getTrackingDate(new Date(), dayStartHour);
+    try {
+      await RegistryService.endDay(user.uid, logDate, {
+        configs,
+        unitPrice: userProfile?.unitPrice ?? 0.5,
+        clientCounts: activeCounts,
+      });
+      setActiveCounts({});
+    } catch (err) {
+      const msg = err?.message === 'NOTHING_TO_ARCHIVE'
+        ? 'No counts to archive — tap + on a tracker first.'
+        : (err.message || 'End day failed');
+      setError(msg);
+    } finally {
+      setEndingDay(false);
+    }
+  }, [user, endingDay, dayStartHour, configs, userProfile?.unitPrice, activeCounts]);
+
+  const createManualEntry = useCallback(async (date, counts) => {
+    if (!user) return;
+    try {
+      await RegistryService.createManualEntry(user.uid, date, counts, {
+        configs,
+        unitPrice: userProfile?.unitPrice ?? 0.5,
+      });
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [user?.uid, configs, userProfile?.unitPrice]);
+
+  const deleteLog = useCallback(async (docId) => {
+    if (!user) return;
+    try {
+      await RegistryService.deleteLog(user.uid, docId, {
+        configs,
+        unitPrice: userProfile?.unitPrice ?? 0.5,
+      });
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [user?.uid, configs, userProfile?.unitPrice]);
+
+  const addProtocol = useCallback(async (d) => {
+    if (!user) throw new Error('UNAUTHORIZED');
+    try {
+      await RegistryService.addProtocol(user.uid, { ...d, order: configs.length });
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [user?.uid, configs.length]);
+
+  const updateProtocol = useCallback(async (id, d) => {
+    if (!user) throw new Error('UNAUTHORIZED');
+    try {
+      await RegistryService.updateProtocol(user.uid, id, d);
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [user?.uid]);
+
+  const deleteProtocol = useCallback(async (id) => {
+    if (!user) throw new Error('UNAUTHORIZED');
+    try {
+      await RegistryService.deleteProtocol(user.uid, id);
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [user?.uid]);
 
   const reorder = useCallback(async (id, dir) => {
     if (!user) return;
-    const sorted = [...counterProtocols].sort((a,b) => a.order - b.order);
+    const sorted = [...configs].sort((a, b) => (a.order || 0) - (b.order || 0));
     const idx = sorted.findIndex(x => x.id === id);
     if ((dir === 'up' && idx === 0) || (dir === 'down' && idx === sorted.length - 1)) return;
     const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
     try {
       await RegistryService.reorderConfigs(user.uid, sorted[idx], sorted[swapIdx]);
-    } catch (err) { setError(err.message); }
-  }, [user?.uid, counterProtocols]);
-
-  const addProtocol = useCallback((data) => {
-    if (!user) return;
-    return RegistryService.addProtocol(user.uid, { ...data, order: counterProtocols.length });
-  }, [user?.uid, counterProtocols.length]);
-
-  const updateProtocol = useCallback((id, data) => {
-    if (!user) return;
-    return RegistryService.updateProtocol(user.uid, id, data);
-  }, [user?.uid]);
-
-  const deleteProtocol = useCallback((id) => {
-    if (!user) return;
-    return RegistryService.deleteProtocol(user.uid, id);
-  }, [user?.uid]);
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [user?.uid, configs]);
 
   return {
-    configs: counterProtocols,
-    logs: historicalLogs,
-    metrics,
+    configs: configs || [],
+    logs: logs || [],
+    metrics: metrics || INITIAL_STATE.metrics,
+    userProfile: userProfile || {},
+    activeCounts: activeCounts || {},
+    dayStartHour,
     loading,
+    endingDay,
+    logsTruncated,
     error,
     increment,
     decrement,
-    reorder,
+    endDay,
+    createManualEntry,
+    deleteLog,
     addProtocol,
     updateProtocol,
     deleteProtocol,
-    clearError: useCallback(() => setError(null), [])
+    reorder,
+    clearError: useCallback(() => setError(null), []),
   };
 };

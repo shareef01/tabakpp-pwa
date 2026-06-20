@@ -1,0 +1,67 @@
+/**
+ * TABAK++ HIGH-FIDELITY ENGINE
+ * Refined for peak optical clarity and tactile feedback.
+ */
+
+:root {
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --text-primary: #FAFAFA; /* Softened from #FFF to prevent bloom */
+  --text-muted: #71717A;
+  --accent-led: rgba(255, 95, 95, 0.4);
+  --accent-glow: rgba(255, 95, 95, 0.2);
+}
+
+body {
+  margin: 0;
+  background-color: #09090B;
+  /* Task 1: Sub-Pixel Anti-Aliasing */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-family: var(--font-main);
+  color: var(--text-primary);
+}
+
+/* Task 4: Pure Invisible Scrollbars */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Task 1: Global Tabular Nums for changing data */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Task 2: High-Fidelity Glass Material */
+.glass-surface {
+  background: rgba(18, 18, 20, 0.6);
+  backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Task 3: Kinetic Physics Classes */
+.btn-tactile {
+  transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 200ms ease-in-out,
+              border-color 200ms ease-in-out,
+              box-shadow 200ms ease-in-out;
+}
+
+.btn-tactile:active {
+  transform: scale(0.94);
+}
+
+/* Task 2: Multi-Layered LED Glow */
+.led-glow-primary {
+  box-shadow: 0 0 10px var(--accent-glow), 0 4px 20px var(--accent-led);
+}
+
+/* BRAND GLOW ANIMATION (Polished) */
+@keyframes brand-glow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.15)); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 18px rgba(var(--accent-rgb), 0.4)); transform: scale(1.03); }
+}
+
+.animate-brand {
+  animation: brand-glow 4s ease-in-out infinite;
+}

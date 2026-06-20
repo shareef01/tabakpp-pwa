@@ -1,67 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" class="h-full bg-[#09090B]">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-
-    <!-- CACHE INVALIDATION LAYER -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-
-    <!-- PWA Primary Meta Tags -->
-    <title>TABAK</title>
-    <meta name="theme-color" content="#020202" />
     <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
 
-    <!-- iOS Specific PWA Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="TABAK" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <!-- CRITICAL: viewport-fit=cover for Notch/Home Indicator Awareness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
 
-    <!-- Google Fonts: Inter -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#09090B">
+
+    <title>T++ Registry</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-
-    <script>
-      // Force unregister any lingering service workers to prevent stale PWA behavior
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for (let registration of registrations) { registration.unregister(); }
-        });
-      }
-    </script>
-
-    <style>
-      :root {
-        --bg-base: #020202;
-        --accent: #00D1FF;
-      }
-      html, body {
-        margin: 0;
-        background-color: var(--bg-base);
-        color: white;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        -webkit-font-smoothing: antialiased;
-        overflow-x: hidden;
-        overscroll-behavior-y: none;
-        /* iOS Height Fix */
-        height: -webkit-fill-available;
-        min-height: 100%;
-      }
-      #root {
-        min-height: 100vh;
-        min-height: 100dvh;
-        display: flex;
-        flex-direction: column;
-      }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   </head>
-  <body>
-    <div id="root"></div>
+  <body class="h-full bg-[#09090B] text-white selection:bg-accent/30 antialiased">
+    <div id="root" class="h-full"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

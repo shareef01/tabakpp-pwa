@@ -1,44 +1,173 @@
 import { describe, it, expect } from 'vitest';
-import { SmokingCalculator } from './smokingCalculator';
+
+import { SmokingCalculator, getTrackingDate, aggregateDailyChartTotals } from './logic';
+
+
+
+describe('getTrackingDate', () => {
+
+  it('uses same calendar date after day-start hour', () => {
+
+    const when = new Date(2026, 5, 21, 8, 30, 0);
+
+    expect(getTrackingDate(when, 6)).toBe('2026-06-21');
+
+  });
+
+
+
+  it('rolls back before day-start hour (night owl)', () => {
+
+    const when = new Date(2026, 5, 21, 3, 30, 0);
+
+    expect(getTrackingDate(when, 6)).toBe('2026-06-20');
+
+  });
+
+});
+
+
 
 describe('SmokingCalculator', () => {
+
   const mockConfigs = [
-    { id: 'c1', limit: 20, pricePerUnit: 0.5 },
-    { id: 'c2', limit: 5, pricePerUnit: 0 }
+
+    { id: 'c1', limit: 20, pricePerUnit: 0.5, type: 'CIGARETTE', isFinanciallyTracked: true, isPrimaryTracked: true },
+
+    { id: 'c2', limit: 5, pricePerUnit: 0, type: 'SIMPLE', isFinanciallyTracked: true, isPrimaryTracked: true },
+
   ];
 
-  it('calculates total count correctly', () => {
-    const log = { counts: { c1: 5, c2: 2 } };
-    expect(SmokingCalculator.getTotalCount(log, mockConfigs)).toBe(7);
+
+
+  it('calculates spent vs headroom per session snapshot', () => {
+
+    const { wasted, saved } = SmokingCalculator.calculateFinancials({ counts: { c1: 2, c2: 2 } }, mockConfigs, 1.0);
+
+    expect(wasted).toBe(3);
+
+    expect(saved).toBe(12);
+
   });
 
-  it('calculates total limit correctly', () => {
-    expect(SmokingCalculator.getTotalLimit(mockConfigs)).toBe(25);
+
+
+  it('merges manual entries on the same day for chart totals', () => {
+    const logs = [
+      { logDate: '2026-01-01', counts: { c1: 5 } },
+      { logDate: '2026-01-01', counts: { c1: 3 } },
+    ];
+    expect(aggregateDailyChartTotals(logs)).toEqual([{ date: '2026-01-01', total: 8 }]);
   });
 
-  it('calculates life lost correctly (11 mins per unit)', () => {
-    const logs = [{ counts: { c1: 2 } }];
-    expect(SmokingCalculator.calculateLifeLostMinutes(logs)).toBe(22);
+  it('merges manual entries on the same day for lifetime savings', () => {
+
+    const logs = [
+
+      { logDate: '2026-01-01', counts: { c1: 5 } },
+
+      { logDate: '2026-01-01', counts: { c1: 3 } },
+
+    ];
+
+    const m = SmokingCalculator.getGlobalMetrics(logs, mockConfigs, {}, '2026-01-02', 0.5);
+
+    expect(m.savedLifetime).toBe(8.5);
+
   });
 
-  it('gets correct rank based on XP', () => {
-    expect(SmokingCalculator.getRank(50)).toBe('Apprentice');
-    expect(SmokingCalculator.getRank(1000)).toBe('Veteran');
-    expect(SmokingCalculator.getRank(2000)).toBe('Master');
-    expect(SmokingCalculator.getRank(6000)).toBe('Legend');
+
+
+  it('prefers End Day archive over manual entry on the same chart day', () => {
+
+    const logs = [
+
+      { id: '2026-01-01_DAY', logDate: '2026-01-01', origin: 'DAY_RESET', counts: { c1: 4 } },
+
+      { id: '2026-01-01_M123_ab', logDate: '2026-01-01', isManual: true, counts: { c1: 10 } },
+
+    ];
+
+    expect(aggregateDailyChartTotals(logs)).toEqual([{ date: '2026-01-01', total: 4 }]);
+
   });
 
-  it('calculates savings correctly with global fallback', () => {
-    const logs = [{ counts: { c1: 2, c2: 2 } }];
-    const globalCost = 1.0;
-    // c1 has pricePerUnit 0.5, c2 has 0 (fallback to global 1.0)
-    // (2 * 0.5) + (2 * 1.0) = 3.0
-    expect(SmokingCalculator.calculateSavings(logs, mockConfigs, globalCost)).toBe(3.0);
+
+
+  it('uses open session only for dashboard spend and remaining', () => {
+
+    const logs = [{ logDate: '2026-01-01', counts: { c1: 12 } }];
+
+    const m = SmokingCalculator.getGlobalMetrics(logs, mockConfigs, { c1: 2 }, '2026-01-02', 0.5);
+
+    expect(m.count).toBe(2);
+
+    expect(m.spentToday).toBe(1);
+
+    expect(m.savedLifetime).toBe(6.5);
+
   });
 
-  it('calculates recovery milestones', () => {
-    const milestones = SmokingCalculator.calculateRecoveryMilestones(Date.now() - 1000 * 60 * 60); // 1 hour ago
-    expect(milestones[0].title).toBe("Heart Rate Normalizes");
-    expect(milestones[0].progress).toBe(1); // 1 hour > 20 mins
+
+
+  it('counts open tracking day as in-control when session is empty', () => {
+
+    const logs = [
+
+      { logDate: '2026-01-02', counts: { c1: 5 } },
+
+      { logDate: '2026-01-01', counts: { c1: 5 } },
+
+    ];
+
+    const streak = SmokingCalculator.calculateStreak(logs, mockConfigs, {}, '2026-01-03');
+
+    expect(streak).toBe(3);
+
   });
+
+
+
+  it('breaks streak on a gap day with no archive', () => {
+
+    const logs = [
+
+      { logDate: '2026-01-05', counts: { c1: 5 } },
+
+      { logDate: '2026-01-03', counts: { c1: 5 } },
+
+    ];
+
+    const streak = SmokingCalculator.calculateStreak(logs, mockConfigs, {}, '2026-01-05');
+
+    expect(streak).toBe(1);
+
+  });
+
+
+
+  it('breaks streak when a protocol exceeds its own limit', () => {
+
+    const logs = [{ logDate: '2026-01-01', counts: { c1: 25 } }];
+
+    const streak = SmokingCalculator.calculateStreak(logs, mockConfigs, {}, '2026-01-01');
+
+    expect(streak).toBe(0);
+
+  });
+
+
+
+  it('returns zero streak when last archive is too old and session is empty', () => {
+
+    const logs = [{ logDate: '2026-01-01', counts: { c1: 5 } }];
+
+    const streak = SmokingCalculator.calculateStreak(logs, mockConfigs, {}, '2026-01-10');
+
+    expect(streak).toBe(0);
+
+  });
+
 });
+
+

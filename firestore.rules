@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isValidLogDate(d) {
+      return d is string && d.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function validLifetimeAggregates(agg) {
+      return agg == null
+        || (agg is map
+          && agg.keys().hasOnly(['saved', 'wasted'])
+          && agg.saved is number && agg.saved >= 0 && agg.saved <= 1000000
+          && agg.wasted is number && agg.wasted >= 0 && agg.wasted <= 1000000);
+    }
+
+    function validActiveCounts(m) {
+      return m == null || (m is map && m.size() <= 40);
+    }
+
+    function aggregateDeltaBounded() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lifetimeAggregates'])
+        || (
+          validLifetimeAggregates(request.resource.data.lifetimeAggregates)
+          && validLifetimeAggregates(resource.data.get('lifetimeAggregates', {'saved': 0, 'wasted': 0}))
+          && request.resource.data.lifetimeAggregates.saved - resource.data.get('lifetimeAggregates', {'saved': 0}).saved <= 1000
+          && request.resource.data.lifetimeAggregates.saved - resource.data.get('lifetimeAggregates', {'saved': 0}).saved >= -1000
+          && request.resource.data.lifetimeAggregates.wasted - resource.data.get('lifetimeAggregates', {'wasted': 0}).wasted <= 1000
+          && request.resource.data.lifetimeAggregates.wasted - resource.data.get('lifetimeAggregates', {'wasted': 0}).wasted >= -1000
+        );
+    }
+
+    function validUserWrite() {
+      return validActiveCounts(request.resource.data.get('activeCounts', null))
+        && validLifetimeAggregates(request.resource.data.get('lifetimeAggregates', null));
+    }
+
+    function validUserUpdate() {
+      return validUserWrite() && aggregateDeltaBounded();
+    }
+
+    function validLogData(data) {
+      return data.keys().hasAll(['counts', 'logDate'])
+        && isValidLogDate(data.logDate)
+        && data.counts is map
+        && data.counts.size() <= 40
+        && data.size() <= 20;
+    }
+
+    function validLogCreate() {
+      return validLogData(request.resource.data);
+    }
+
+    function validLogUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['counts', 'updatedAt'])
+        && validLogData(request.resource.data);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && validUserWrite();
+      allow update: if isOwner(userId) && validUserUpdate();
+      allow delete: if false;
+
+      match /logs/{logId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && validLogCreate();
+        allow update: if isOwner(userId) && validLogUpdate();
+        allow delete: if isOwner(userId);
+      }
+
+      match /configs/{configId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 1
+          && request.resource.data.name.size() <= 80
+          && request.resource.data.order is number
+          && request.resource.data.size() <= 30;
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

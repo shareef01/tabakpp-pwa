@@ -1,99 +1,83 @@
-import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutGrid, BarChart3, Settings, AlertCircle, Loader2 } from 'lucide-react';
-import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
-import { updateProfile } from 'firebase/auth';
-import { auth, db } from './firebase';
+import React, { useState, useMemo, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { AlertCircle, PlusCircle } from 'lucide-react';
+import { updateProfile, signOut } from 'firebase/auth';
+import { auth } from './config/firebase';
+import { RegistryService } from './api/registryService';
 
-// --- UTILS ---
-import { hexToRgbValues } from './utils/formatters';
+import './styles/fidelity.css';
+import { getTrackingDate, DEFAULT_DAY_START_HOUR, formatDateDisplay, readStoredAccent, persistAccentColor, accentCssVars } from './utils/logic';
+import { UI, getWidgetScaleVars } from './constants/ui';
+import { ROUTES, pathToTab, tabToPath } from './constants/routes';
+import { BRAND_ACCENT } from './api/authService';
 
-const cn = (...classes) => classes.filter(Boolean).join(' ');
-
-// --- CONTEXT & HOOKS ---
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { useRegistry } from './hooks/useRegistry';
 
-// --- SHARED COMPONENTS ---
-import { TopBanner } from './components/layout/TopBanner';
-import { LogoutModal } from './components/modals/Modals';
-import { DashboardSkeleton } from './components/dashboard/DashboardSkeleton';
-import { ProtocolFormOverlay } from './components/modals/ProtocolFormOverlay';
-import { EditOverlay } from './components/modals/EditOverlay';
-import { UI } from './components/Common';
+import { Header } from './components/layout/Header';
+import { BottomNav } from './components/layout/BottomNav';
+import { LogoutModal } from './features/shared/LogoutModal';
+import { DashboardSkeleton } from './features/dashboard/components/DashboardSkeleton';
+import { ProtocolForm } from './features/shared/ProtocolForm';
+import { EditLogOverlay } from './features/history/components/EditLogOverlay';
 
-// --- LAZY LOADED SCREENS ---
 const lazyWithRetry = (componentImport) => lazy(async () => {
-  try {
-    return await componentImport();
-  } catch (error) {
-    console.error("Chunk loading failed, forcing hard refresh...", error);
-    window.location.reload();
-    return { default: () => null };
-  }
+  try { return await componentImport(); }
+  catch { window.location.reload(); return { default: () => null }; }
 });
 
-const AuthScreen = lazyWithRetry(() => import('./components/auth/AuthScreen').then(m => ({ default: m.AuthScreen })));
-const TrackerCard = lazyWithRetry(() => import('./components/dashboard/TrackerCard').then(m => ({ default: m.TrackerCard })));
-const MetricBanner = lazyWithRetry(() => import('./components/dashboard/MetricBanner').then(m => ({ default: m.MetricBanner })));
-const HistoryScreen = lazyWithRetry(() => import('./components/history/HistoryScreen').then(m => ({ default: m.HistoryScreen })));
-const SettingsScreen = lazyWithRetry(() => import('./components/settings/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
-
-// --- GLOBAL CONSTANTS ---
-const APP_VERSION = "30.1.5-POLISHED";
-
-// --- GLOBAL COMPONENTS ---
+const AuthScreen = lazyWithRetry(() => import('./features/auth/AuthScreen').then(m => ({ default: m.AuthScreen })));
+const TrackerCard = lazyWithRetry(() => import('./features/dashboard/components/TrackerCard').then(m => ({ default: m.TrackerCard })));
+const MetricBanner = lazyWithRetry(() => import('./features/dashboard/components/MetricBanner').then(m => ({ default: m.MetricBanner })));
+const HistoryScreen = lazyWithRetry(() => import('./features/history/HistoryScreen').then(m => ({ default: m.HistoryScreen })));
+const SettingsScreen = lazyWithRetry(() => import('./features/settings/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 
 const LoadingView = () => (
-  <div className="min-h-screen w-full bg-[#020202] flex flex-col items-center justify-center space-y-8 text-white font-inter">
-    <Loader2 className="animate-spin text-accent" size={64} strokeWidth={3} />
-    <span className="text-xs font-black tracking-[1em] uppercase text-white/20 animate-pulse">Syncing</span>
+  <div className="h-[100dvh] w-full bg-[#09090B] flex flex-col items-center justify-center text-[#FAFAFA] font-inter overflow-hidden relative">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-6 relative z-10">
+      <div className="w-32 h-[1.5px] bg-white/[0.04] relative overflow-hidden rounded-full">
+        <motion.div initial={{ left: '-100%' }} animate={{ left: '100%' }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }} className="absolute top-0 w-1/2 h-full bg-accent" />
+      </div>
+      <span className="text-[9px] font-black tracking-[0.6em] uppercase text-white/10 animate-pulse">Synchronizing</span>
+    </motion.div>
   </div>
 );
 
-const NavBtn = React.memo(({ id, icon: Icon, label, active, onClick }) => (
-  <button onClick={onClick} className="relative flex-1 py-4 flex flex-col items-center gap-1.5 group transition-all duration-300 text-white h-full border-none bg-transparent">
-    {/* ACTIVE STATE: Subtle glowing accent line above icon */}
-    <motion.div
-      initial={false}
-      animate={{
-        opacity: active ? 1 : 0,
-        scaleX: active ? 1 : 0,
-        y: active ? 0 : -4
-      }}
-      className="absolute top-0 w-8 h-1 rounded-b-full bg-accent shadow-[0_4px_12px_var(--accent)]"
-    />
+const TabSkeleton = () => <div className="w-full min-h-[50vh] rounded-[32px] bg-white/[0.02] border border-white/[0.04] animate-pulse" aria-hidden="true" />;
 
-    <Icon
-      size={24}
-      className={cn(
-        "transition-all duration-300",
-        active ? "text-accent scale-110 drop-shadow-[0_0_15px_var(--accent-rgb)]" : "text-neutral-500 group-hover:text-neutral-300"
-      )}
-      strokeWidth={active ? 3 : 2}
-    />
-
-    {/* ACTIVE STATE: Revealed small text label */}
-    <span className={cn(
-      "text-[9px] font-[1000] uppercase tracking-widest transition-all duration-300",
-      active ? "text-white opacity-100 translate-y-0" : "text-neutral-500 opacity-0 translate-y-1"
-    )}>
-      {label}
-    </span>
-  </button>
+const EmptyDashboard = React.memo(({ onAdd }) => (
+  <div className="flex-1 flex flex-col items-center justify-center py-10 md:py-20 text-center space-y-10 px-8">
+    <div className="w-24 h-24 rounded-[36px] bg-white/[0.02] border border-white/5 flex items-center justify-center text-white/10"><PlusCircle size={48} strokeWidth={1} /></div>
+    <button type="button" onClick={onAdd} className="h-14 px-12 rounded-[24px] bg-accent text-zinc-950 font-black uppercase tracking-[0.3em] text-[10px]">Init Node</button>
+  </div>
 ));
 
-// --- ERROR BOUNDARY ---
-class GlobalErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
-  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+class FeatureErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, resetKey: 0 }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error, errorInfo) { console.error(`FEATURE_ERROR [${this.props.name}]:`, error, errorInfo); }
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen w-full bg-[#020202] flex flex-col items-center justify-center p-8 text-center text-white font-inter">
-          <div className="p-6 bg-danger/10 rounded-3xl border border-danger/20 mb-8"><AlertCircle size={48} className="text-danger" /></div>
-          <h2 className="text-2xl font-black uppercase tracking-tighter mb-4">Architecture Failure</h2>
-          <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="px-8 h-14 rounded-full bg-white text-black font-black uppercase tracking-widest">Reset System</button>
+        <div className="flex flex-col items-center justify-center p-12 text-center bg-danger/5 border border-danger/10 rounded-[40px] m-4">
+          <AlertCircle size={32} className="text-danger mb-4" />
+          <button type="button" onClick={() => this.setState((s) => ({ hasError: false, resetKey: s.resetKey + 1 }))} className="px-8 h-12 rounded-2xl bg-white text-black font-black uppercase text-[9px]">Reload Subsystem</button>
+        </div>
+      );
+    }
+    return <div key={this.state.resetKey}>{this.props.children}</div>;
+  }
+}
+
+class GlobalErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-[100dvh] w-full bg-[#09090B] flex items-center justify-center">
+          <button type="button" onClick={() => { this.setState({ hasError: false }); window.location.href = '/track'; }} className="px-10 h-14 rounded-full bg-white text-black font-black uppercase text-[10px]">Reset</button>
         </div>
       );
     }
@@ -101,158 +85,273 @@ class GlobalErrorBoundary extends React.Component {
   }
 }
 
-// --- ARCHITECTURAL CORE ---
-
 const AppContent = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, bootstrapError } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeTab = pathToTab(location.pathname);
+
+  const [previewDayStartHour, setPreviewDayStartHour] = useState(null);
+  const [trackingDay, setTrackingDay] = useState(() => getTrackingDate(new Date(), DEFAULT_DAY_START_HOUR));
+  const [settingsError, setSettingsError] = useState(null);
+  const shellReadyRef = useRef(false);
+
+  const registry = useRegistry(user, trackingDay, previewDayStartHour);
+  const {
+    configs = [], logs = [], metrics = {}, userProfile = {}, activeCounts = {}, loading = false, error = null,
+    dayStartHour = DEFAULT_DAY_START_HOUR,
+    endingDay = false, logsTruncated = false,
+    increment, decrement, reorder, addProtocol, updateProtocol, deleteProtocol, endDay, createManualEntry, deleteLog, clearError,
+  } = registry || {};
+
+  const effectiveDayStartHour = previewDayStartHour ?? dayStartHour;
 
   useEffect(() => {
-    const localBuildId = localStorage.getItem('tabak_build_id');
-    const serverBuildId = String(typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : 'initial');
+    if (!loading && user) shellReadyRef.current = true;
+  }, [loading, user]);
 
-    if (localBuildId && localBuildId !== serverBuildId) {
-      if ('caches' in window) {
-        caches.keys().then(names => {
-          for (let name of names) caches.delete(name);
-        });
-      }
-      localStorage.setItem('tabak_build_id', serverBuildId);
-      sessionStorage.clear();
-      window.location.replace(window.location.origin + window.location.pathname + '?v=' + serverBuildId);
-    } else {
-      localStorage.setItem('tabak_build_id', serverBuildId);
+  useEffect(() => {
+    const refresh = () => setTrackingDay(getTrackingDate(new Date(), effectiveDayStartHour));
+    refresh();
+
+    const tick = setInterval(refresh, 30_000);
+
+    const now = new Date();
+    const nextBoundary = new Date(now);
+    nextBoundary.setSeconds(0, 0);
+    nextBoundary.setMinutes(0);
+    nextBoundary.setHours(effectiveDayStartHour);
+    while (nextBoundary.getTime() <= now.getTime()) {
+      nextBoundary.setDate(nextBoundary.getDate() + 1);
     }
-  }, []);
+    const boundaryTimer = setTimeout(refresh, nextBoundary.getTime() - now.getTime() + 100);
 
-  const [settings, setSettings] = useState({
-    accent: localStorage.getItem('tabak_accent') || '#00D1FF',
-    widgetSize: 'MEDIUM',
-    avatar: null,
-    name: '',
-    unitPrice: 0.5
-  });
+    return () => {
+      clearInterval(tick);
+      clearTimeout(boundaryTimer);
+    };
+  }, [effectiveDayStartHour]);
 
-  const responsiveUser = useMemo(() => ({
-    ...user,
-    displayName: settings.name || user?.displayName,
-    photoURL: settings.avatar || user?.photoURL
-  }), [user, settings.name, settings.avatar]);
-
-  const [isHydrated, setIsHydrated] = useState(false);
-  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const registry = useRegistry(user, today, settings.unitPrice);
-
-  const {
-    configs, logs, metrics, loading: registryLoading, error: registryError,
-    increment, decrement, reorder, addProtocol, updateProtocol, deleteProtocol
-  } = registry || { configs: [], logs: [], metrics: {}, loading: true, error: null };
-
-  const [activeTab, setActiveTab] = useState('track');
   const [showAdd, setShowAdd] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [editProtocol, setEditProtocol] = useState(null);
   const [showLogout, setShowLogout] = useState(false);
+  const [themeAccent, setThemeAccent] = useState(() => readStoredAccent(BRAND_ACCENT));
+
+  const navigateTab = useCallback((tab) => navigate(tabToPath(tab)), [navigate]);
+
+  const profileLoaded = Boolean(user && !loading);
 
   useEffect(() => {
-    if (!user) return;
-    return onSnapshot(doc(db, 'users', user.uid), (s) => {
-      if (s.exists()) {
-        const d = s.data();
-        if (d.accent) localStorage.setItem('tabak_accent', d.accent);
-        setSettings(p => ({
-          ...p,
-          accent: d.accent || '#00D1FF',
-          widgetSize: d.widgetSize || 'MEDIUM',
-          avatar: d.avatar || null,
-          name: d.name || user.displayName || '',
-          unitPrice: d.unitPrice ?? 0.5
-        }));
-      }
-      setIsHydrated(true);
-    });
-  }, [user]);
+    if (userProfile?.accent && user?.uid) {
+      persistAccentColor(userProfile.accent, user.uid);
+      setThemeAccent(userProfile.accent);
+    }
+  }, [userProfile?.accent, user?.uid]);
 
-  const onUpdateSettings = useCallback(async (upd) => {
+  useEffect(() => {
+    if (!user && !authLoading) {
+      setThemeAccent(readStoredAccent(BRAND_ACCENT));
+    }
+  }, [user, authLoading]);
+
+  const resolvedAccent = user
+    ? (userProfile?.accent || (profileLoaded ? readStoredAccent(BRAND_ACCENT, user.uid) : BRAND_ACCENT))
+    : themeAccent;
+
+  const accentStyle = useMemo(() => accentCssVars(resolvedAccent), [resolvedAccent]);
+
+  useEffect(() => {
+    Object.entries(accentStyle).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(key, value);
+    });
+  }, [accentStyle]);
+
+  const currentSettings = useMemo(() => ({
+    accent: resolvedAccent,
+    widgetSize: userProfile?.widgetSize || 'MEDIUM',
+    avatar: userProfile?.avatar || user?.photoURL || null,
+    name: userProfile?.name || user?.displayName || '',
+    unitPrice: userProfile?.unitPrice ?? 0.5,
+    pouchPrice: userProfile?.pouchPrice ?? 0,
+    estimatedYield: userProfile?.estimatedYield ?? 20,
+    dayStartHour: userProfile?.dayStartHour ?? DEFAULT_DAY_START_HOUR,
+    purchaseType: userProfile?.purchaseType || 'PACK',
+  }), [resolvedAccent, userProfile, user]);
+
+  const onUpdSettings = useCallback(async (upd) => {
     if (!user || !auth.currentUser) return;
     try {
-      if (upd.name || upd.avatar) {
-        await updateProfile(auth.currentUser, { displayName: upd.name, photoURL: upd.avatar });
+      const authUpd = {};
+      if (upd.name !== undefined) authUpd.displayName = upd.name;
+      // Auth photoURL is too short for base64; Firestore holds the avatar.
+      if (upd.avatar !== undefined && !String(upd.avatar).startsWith('data:')) {
+        authUpd.photoURL = upd.avatar;
       }
-      await updateDoc(doc(db, 'users', user.uid), upd);
-    } catch (e) { console.error(e); }
+      if (Object.keys(authUpd).length) {
+        await updateProfile(auth.currentUser, authUpd);
+      }
+      if (upd.accent && user.uid) {
+        persistAccentColor(upd.accent, user.uid);
+        setThemeAccent(upd.accent);
+      }
+      await RegistryService.updateUserProfile(user.uid, upd);
+      setSettingsError(null);
+    } catch (e) {
+      setSettingsError(e?.message || 'Settings update failed');
+      throw e;
+    }
   }, [user]);
 
-  if (authLoading) return <LoadingView />;
+  const handleLogout = useCallback(() => {
+    if (user?.uid) persistAccentColor(resolvedAccent, user.uid);
+    persistAccentColor(resolvedAccent);
+    setThemeAccent(resolvedAccent);
+    setPreviewDayStartHour(null);
+    setShowLogout(false);
+    signOut(auth);
+  }, [resolvedAccent, user?.uid]);
+
+  const displayError = error || settingsError;
+  const dismissError = useCallback(() => { clearError(); setSettingsError(null); }, [clearError]);
+
+  if (authLoading) {
+    return (
+      <div className={UI.CANVAS} style={accentStyle}>
+        <LoadingView />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className={`${UI.CANVAS} overflow-y-auto`} style={accentStyle}>
+        {bootstrapError && (
+          <div className="shrink-0 mx-auto w-full max-w-[420px] px-4 pt-3">
+            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+              {bootstrapError}
+            </div>
+          </div>
+        )}
+        <Suspense fallback={<LoadingView />}><AuthScreen /></Suspense>
+      </div>
+    );
+  }
+
+  const tabFallback = shellReadyRef.current ? <TabSkeleton /> : <LoadingView />;
+
+  const trackView = (
+    <motion.div key="track" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full flex flex-col items-center">
+      <FeatureErrorBoundary name="Trackers">
+        <div className={UI.TRACK_DASHBOARD}>
+          {loading ? <DashboardSkeleton widgetSize={currentSettings.widgetSize} /> : (
+            configs.length === 0 ? <EmptyDashboard onAdd={() => setShowAdd(true)} /> : (
+              <div className={UI.TRACKER_GRID}>
+                {[...configs].sort((a, b) => (a.order || 0) - (b.order || 0)).map((c, i) => (
+                  <TrackerCard key={c.id} index={i} config={c} count={activeCounts[c.id] || 0} onInc={() => increment(c.id)} onDec={() => decrement(c.id)} globalSize={currentSettings.widgetSize} />
+                ))}
+              </div>
+            )
+          )}
+          <MetricBanner m={metrics} />
+        </div>
+      </FeatureErrorBoundary>
+    </motion.div>
+  );
+
+  const historyView = (
+    <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full">
+      <FeatureErrorBoundary name="Analytics">
+        <HistoryScreen logs={logs} configs={configs} m={metrics} onEdit={setEditTarget} onDeleteLog={deleteLog} today={trackingDay} onManualEntry={createManualEntry} onError={setSettingsError} />
+      </FeatureErrorBoundary>
+    </motion.div>
+  );
+
+  const settingsView = (
+    <motion.div key="control" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full">
+      <FeatureErrorBoundary name="Calibration">
+        <SettingsScreen
+          configs={configs}
+          user={{ ...user, displayName: currentSettings.name, photoURL: currentSettings.avatar }}
+          settings={currentSettings}
+          activeCounts={activeCounts}
+          onAdd={() => setShowAdd(true)}
+          onReo={reorder}
+          onEditP={setEditProtocol}
+          onUpd={onUpdSettings}
+          onDel={deleteProtocol}
+          onError={setSettingsError}
+          onPreviewDayStart={setPreviewDayStartHour}
+        />
+      </FeatureErrorBoundary>
+    </motion.div>
+  );
 
   return (
-    <div className="min-h-screen w-full bg-[#020202] text-white font-inter selection:bg-accent/30 overflow-x-hidden flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]" style={{ '--accent': settings.accent, '--accent-rgb': hexToRgbValues(settings.accent) }}>
-      {!user ? (
-        <Suspense fallback={<LoadingView />}>
-          <AuthScreen accent={settings.accent} />
-        </Suspense>
-      ) : (
-        <>
-          <TopBanner user={responsiveUser} onNavigate={setActiveTab} widgetSize={settings.widgetSize} onUpdateSettings={onUpdateSettings} onRequestLogout={() => setShowLogout(true)} />
-
-          <main className="flex-1 overflow-y-auto pt-6 pb-28 md:pb-24 transition-all duration-300 overflow-x-hidden">
+    <div
+      className={UI.CANVAS}
+      data-widget-size={currentSettings.widgetSize}
+      style={{
+        ...accentStyle,
+        ...getWidgetScaleVars(currentSettings.widgetSize),
+      }}
+    >
+      {logsTruncated && (
+        <div className="shrink-0 mx-auto w-full max-w-[1400px] px-4 pt-2">
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-amber-200/90">
+            History shows the latest 500 entries. Lifetime savings use server totals.
+          </div>
+        </div>
+      )}
+      {displayError && (
+        <div className="shrink-0 mx-auto w-full max-w-[1400px] px-4 pt-2">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-rose-300">
+            <span className="truncate">{displayError}</span>
+            <button type="button" onClick={dismissError} className="shrink-0 text-rose-400 hover:text-white">Dismiss</button>
+          </div>
+        </div>
+      )}
+      <>
+          <Header
+            user={{ ...user, displayName: currentSettings.name, photoURL: currentSettings.avatar }}
+            onNavigate={navigateTab}
+            onRequestLogout={() => setShowLogout(true)}
+            onEndDay={endDay}
+            endDayPending={endingDay}
+            trackingDayLabel={formatDateDisplay(trackingDay)}
+          />
+          <main className="app-scroll-main flex-1 min-h-0 w-full pt-2">
             <div className={UI.MAX_CONTAINER}>
-              <Suspense fallback={<LoadingView />}>
-                <AnimatePresence mode="wait">
-                  {activeTab === 'track' && (
-                    <motion.div key="track" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-10">
-                      {registryError && <div className="mb-8 p-4 bg-danger/10 border border-danger/20 rounded-2xl text-danger text-[10px] font-[1000] uppercase text-center mb-8">Sync Error: {registryError}</div>}
-
-                      {!isHydrated || registryLoading ? (
-                        <DashboardSkeleton widgetSize={settings.widgetSize} />
-                      ) : (
-                        <div className="flex flex-col gap-10 w-full">
-                           <div className="w-full">
-                              <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 md:gap-8 transition-all duration-300 items-stretch">
-                                {configs.sort((a,b)=>a.order-b.order).map((c, i) => (
-                                  <TrackerCard key={c.id} config={c} count={(metrics.todayLog?.counts || {})[c.id] || 0} onInc={() => increment(c.id)} onDec={() => decrement(c.id)} index={i} globalSize={settings.widgetSize} />
-                                ))}
-                              </div>
-                           </div>
-
-                           <div className="w-full">
-                              <MetricBanner m={metrics} widgetSize={settings.widgetSize} />
-                           </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                  {activeTab === 'history' && <HistoryScreen logs={logs} m={metrics} onEdit={setEditTarget} userId={user.uid} today={today} />}
-                  {activeTab === 'control' && <SettingsScreen configs={configs} user={responsiveUser} settings={settings} onAdd={() => setShowAdd(true)} onReo={reorder} onEditP={setEditProtocol} onUpd={onUpdateSettings} onDel={deleteProtocol} />}
-                </AnimatePresence>
+              <Suspense fallback={tabFallback}>
+                <Routes location={location}>
+                  <Route path={ROUTES.TRACK} element={trackView} />
+                  <Route path={ROUTES.HISTORY} element={historyView} />
+                  <Route path={ROUTES.SETTINGS} element={settingsView} />
+                  <Route path="/" element={<Navigate to={ROUTES.TRACK} replace />} />
+                  <Route path="*" element={<Navigate to={ROUTES.TRACK} replace />} />
+                </Routes>
               </Suspense>
             </div>
           </main>
-
-          <nav className="fixed bottom-0 left-0 right-0 z-[100] bg-neutral-900/80 backdrop-blur-3xl border-t border-white/[0.05] pb-[env(safe-area-inset-bottom)] px-6 h-20">
-            <div className="max-w-[1200px] mx-auto flex items-center justify-around h-full text-white">
-              <NavBtn id="track" icon={LayoutGrid} label="Track" active={activeTab === 'track'} onClick={() => setActiveTab('track')} />
-              <NavBtn id="history" icon={BarChart3} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
-              <NavBtn id="control" icon={Settings} label="Settings" active={activeTab === 'control'} onClick={() => setActiveTab('control')} />
-            </div>
-          </nav>
-
-          <AnimatePresence>
-            {showLogout && <LogoutModal isOpen={showLogout} onClose={() => setShowLogout(false)} onConfirm={() => { setShowLogout(false); auth.signOut(); }} />}
-            {showAdd && <ProtocolFormOverlay isOpen={showAdd} onClose={() => setShowAdd(false)} onApply={async (d) => { await addProtocol(d); setShowAdd(false); }} title="Create" />}
-            {editProtocol && <ProtocolFormOverlay isOpen={!!editProtocol} onClose={() => setEditProtocol(null)} onApply={async (d) => { await updateProtocol(editProtocol.id, d); setEditProtocol(null); }} title="Edit" initialData={editProtocol} />}
-            {editTarget && <EditOverlay log={editTarget} configs={configs} onClose={() => setEditTarget(null)} user={responsiveUser} />}
-          </AnimatePresence>
-        </>
-      )}
+          <BottomNav activeTab={activeTab} onNavigate={navigate} />
+          <ProtocolForm isOpen={showAdd} onClose={() => setShowAdd(false)} onApply={async (d) => { await addProtocol(d); setShowAdd(false); }} title="Create" />
+          {editProtocol && (
+            <ProtocolForm isOpen={!!editProtocol} onClose={() => setEditProtocol(null)} onApply={async (d) => { await updateProtocol(editProtocol.id, d); setEditProtocol(null); }} title="Edit" initialData={editProtocol} />
+          )}
+          <EditLogOverlay isOpen={!!editTarget} log={editTarget} configs={configs} onClose={() => setEditTarget(null)} user={user} unitPrice={currentSettings.unitPrice} onError={setSettingsError} />
+          <LogoutModal isOpen={showLogout} onClose={() => setShowLogout(false)} onConfirm={handleLogout} />
+      </>
     </div>
   );
 };
 
 const App = () => (
   <GlobalErrorBoundary>
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </BrowserRouter>
   </GlobalErrorBoundary>
 );
 

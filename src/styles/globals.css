@@ -1,0 +1,196 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --accent: #FF5F5F;
+    --accent-rgb: 255, 95, 95;
+  }
+
+  /* PWA HARDENING: Prevent browser-specific noise */
+  html, body, #root {
+    height: 100%;
+    background-color: #09090B;
+  }
+
+  html, body {
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    overflow: hidden;
+  }
+
+  #root {
+    user-select: none;
+  }
+
+  /* Enable selection only on inputs */
+  input, textarea {
+    user-select: text !important;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@layer utilities {
+  .safe-x {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .safe-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  /* Tracker grid — auto-fit columns from widget size CSS vars on .app-shell */
+  .tracker-grid {
+    display: grid;
+    gap: var(--tracker-gap, 1.25rem);
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(100%, var(--tracker-min, 17rem)), 1fr)
+    );
+  }
+
+  @media (min-width: 1280px) {
+    .tracker-grid {
+      grid-template-columns: repeat(
+        auto-fit,
+        minmax(min(100%, var(--tracker-min, 17rem)), calc((100% - 2 * var(--tracker-gap, 1.25rem)) / 3))
+      );
+    }
+  }
+
+  .tracker-card {
+    width: 100%;
+    max-width: var(--tracker-max, 28rem);
+  }
+
+  .track-dashboard {
+    gap: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .gauge-track {
+    width: min(100%, var(--gauge-w, 13rem));
+    height: var(--gauge-h, 2.25rem);
+  }
+
+  .counter-display {
+    font-size: var(--counter-fs, 3.5rem);
+  }
+
+  /* Settings — independent columns stack cards without row-height gaps */
+  .settings-columns {
+    align-items: flex-start;
+  }
+
+  .settings-column {
+    height: auto;
+  }
+
+  .settings-page {
+    padding-bottom: 0.25rem;
+  }
+
+  .settings-card {
+    background: rgba(22, 22, 26, 0.88);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .settings-field-label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #a1a1aa;
+    line-height: 1.25;
+  }
+
+  @media (min-width: 640px) {
+    .settings-field-label {
+      font-size: 0.75rem;
+    }
+  }
+
+  .settings-field-hint {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #8b8b93;
+    line-height: 1.55;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* Main scroll region — single overflow container, content-sized inner wrapper */
+  .app-scroll-main {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    scroll-padding-bottom: calc(var(--nav-dock-height, 3.25rem) + env(safe-area-inset-bottom) + 1rem);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  }
+
+  .app-scroll-main::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .app-scroll-main::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .app-scroll-main::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+  }
+
+  /* Bottom nav — floating pill */
+  .nav-dock-bar {
+    isolation: isolate;
+  }
+
+  .nav-dock-btn:focus-visible {
+    outline: 2px solid rgba(var(--accent-rgb), 0.5);
+    outline-offset: 1px;
+  }
+
+  .tracker-btn {
+    min-height: max(2.75rem, var(--tracker-btn-h, 3rem));
+    height: var(--tracker-btn-h, 3rem);
+  }
+
+  /* Short landscape phones — tighten vertical rhythm */
+  @media (max-height: 32rem) and (orientation: landscape) {
+    .track-dashboard {
+      gap: 0.75rem;
+    }
+
+    .tracker-card {
+      padding-top: 0.75rem !important;
+      padding-bottom: 0.75rem !important;
+    }
+  }
+
+  /* Large tablets / desktop — cap card width in 2-col layouts */
+  @media (min-width: 1024px) and (max-width: 1535px) {
+    .tracker-grid:not(:has(> :only-child)) .tracker-card {
+      max-width: min(var(--tracker-max, 28rem), calc(50vw - 2rem));
+    }
+  }
+}

@@ -1,72 +1,142 @@
-# TABAK++ | High-Fidelity Health Optimization Registry
+# TABAK++ (tabakpp-pwa)
 
-TABAK++ is a professional, production-grade Progressive Web App (PWA) built to solve "tracking friction" in behavioral health change. It replaces generic counting tools with a high-fidelity, rewarding interface designed for zero-latency data entry and real-time visualization.
+A privacy-focused **Progressive Web App** for tracking tobacco and nicotine habits with instant tap-to-log entry, real-time cloud sync, and visual feedback that makes daily limits tangible—not another spreadsheet.
 
-**Live Production Link:** [https://tabakpp.web.app](https://tabakpp.web.app)
-
----
-
-## 🖼️ Visual Showcase
-
-### 📊 Dashboard (Track)
-A high-density grid tracking dashboard that adapts from an 11px compact mobile view to a 7xl wide desktop command center.
-![Track Screen](https://raw.githubusercontent.com/shareef01/tabakpp-pwa/main/public/screenshots/track.png)
-
-### 📈 Analytics (History)
-High-fidelity historical data visualization showing daily velocity and long-term health trends.
-![History Screen](https://raw.githubusercontent.com/shareef01/tabakpp-pwa/main/public/screenshots/history.png)
-
-### ⚙️ Identity & Controls (Settings)
-Sophisticated identity management and "Obsidian Glass" styling with real-time cloud synchronization.
-![Settings Screen](https://raw.githubusercontent.com/shareef01/tabakpp-pwa/main/public/screenshots/settings.png)
+**Live app:** [https://tabakpp.web.app](https://tabakpp.web.app)
 
 ---
 
-## 🎯 Key Features
-*   **Visual Urgency & Rewards**: High-fidelity 3D gauges and progress rings that transform raw counts into visual urgency and positive reinforcement (XP, Savings, Health metrics).
-*   **Real-Time Cloud Sync**: Seamless cross-device synchronization using Firebase Firestore listeners—entry on one device reflects instantly on all other active sessions.
-*   **Identity Personalization**: Custom avatar synchronization using Firestore-Base64 storage for free-tier optimization and zero-latency local previews.
-*   **Obsidian Design System**: A custom "Glassmorphism" aesthetic featuring 32px standard curves, 70% contrast hardening for maximum legibility, and hardware-accelerated animations.
+## The idea
+
+Most habit trackers feel like chores: too many taps, generic counters, no sense of progress. **TABAK++** (T++) is built around **tracking friction**—the gap between wanting to log and actually logging.
+
+The app treats each product you track (cigarettes, roll-your-own, pouches, etc.) as a **registry node** with its own daily limit and a dedicated gauge. One tap increments; limits turn the UI amber/red so you feel urgency before you blow past your goal. A **tracking day** can start at a custom hour (e.g. 4 AM) so “today” matches your rhythm, not midnight.
+
+History turns raw logs into **velocity charts** and streak-style metrics (health, savings, XP-style progress). Settings hold your identity, accent color, protocols, and day-start—all synced across devices via Firebase.
 
 ---
 
-## 📂 Project Structure
+## Screenshots
 
-*   `src/components/`: Reusable UI components categorized by feature (auth, dashboard, history, layout, modals, settings).
-*   `src/context/`: React Context providers for global state management (e.g., `AuthContext`).
-*   `src/hooks/`: Custom hooks for encapsulated logic (e.g., `useRegistry` for data orchestration).
-*   `src/services/`: Direct interfaces with external services like Firebase Firestore.
-*   `src/utils/`: Pure helper functions for formatting and calculations.
-*   `src/App.jsx`: Main application orchestrator and routing hub.
-*   `src/main.jsx`: Application entry point.
+| Sign-in & onboarding | Track dashboard (desktop) |
+|---|---|
+| ![TABAK++ sign-in screen](./public/screenshots/app.png) | ![Track dashboard](./public/screenshots/track.png) |
 
----
-
-## 🛠️ Technical Stack
-The app is engineered with a focus on performance, security, and architectural integrity.
-
-*   **Frontend Core**: React.js (Functional Hooks + Context API)
-*   **Architecture**: MVVM (Model-View-ViewModel) to decouple complex health calculations from UI rendering.
-*   **Persistence**: Firebase Auth & Firestore (Real-time `onSnapshot` architecture).
-*   **Styling**: Tailwind CSS (Standardized 4pt spacing grid + custom design system constants).
-*   **Animations**: Framer Motion (GPU-accelerated `scaleX` and `transform` logic for 60FPS interaction).
-*   **Infrastructure**: PWA Standalone configuration for native installation on iOS/Android.
+| History & analytics | Settings |
+|---|---|
+| ![History screen](./public/screenshots/history.png) | ![Settings screen](./public/screenshots/settings.png) |
 
 ---
 
-## 📲 Native Installation
-For a true native-app experience (no browser bars, full-screen interaction):
+## Features
 
-### **iOS (Safari)**
-1. Visit the live URL.
-2. Tap the **Share** button.
-3. Select **"Add to Home Screen"**.
-
-### **Android (Chrome)**
-1. Visit the live URL.
-2. Tap the **Menu** (three dots).
-3. Select **"Install App"**.
+- **One-tap logging** — Increment/decrement counters from the track grid; optional manual entries and edits in history.
+- **Custom gauges** — Ring, bar, zig-zag, RYO roll, and joint-style progress visuals per tracker type.
+- **Tracking day boundary** — Configurable day-start hour with live rollover.
+- **Metrics banner** — Streak, savings, and health-style derived stats from your log stream.
+- **Real-time sync** — Firestore listeners keep all signed-in devices in step.
+- **Personalization** — Per-user accent color, avatar (Firestore-backed), and protocol templates.
+- **PWA** — Installable on iOS/Android; standalone display without browser chrome.
+- **Security** — Firebase App Check (reCAPTCHA v3), hardened Firestore rules, security headers on hosting.
 
 ---
-**TABAK++ is optimized for speed, legibility, and professional behavioral tracking.**
-*Copyright © 2024 TABAK++ Systems.*
+
+## Tech stack
+
+| Layer | Technology |
+|-------|------------|
+| UI | React 18, React Router 7, Tailwind CSS |
+| Motion | Framer Motion |
+| Charts | Recharts |
+| Icons | Lucide React |
+| Backend | Firebase Auth, Cloud Firestore |
+| App integrity | Firebase App Check (reCAPTCHA v3) |
+| Build | Vite 5 |
+| PWA | vite-plugin-pwa |
+| Tests | Vitest, Testing Library |
+| Deploy | Firebase Hosting |
+
+---
+
+## Project structure
+
+```
+src/
+├── api/              # Auth, Firestore registry, avatar services
+├── config/           # Firebase bootstrap, App Check
+├── components/       # Shared layout (Header, BottomNav) and UI primitives
+├── constants/        # Routes, design tokens
+├── context/          # AuthContext
+├── features/         # auth, dashboard, history, settings, shared modals
+├── hooks/            # useRegistry, useModalA11y
+├── styles/           # globals.css, fidelity design system
+└── utils/            # logic (metrics, tracking date), system helpers
+```
+
+---
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 18+
+- A Firebase project with Auth (Email + Google) and Firestore enabled
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/shareef01/tabakpp-pwa.git
+cd tabakpp-pwa
+npm install
+```
+
+### 2. Environment variables
+
+Copy the template and fill in values from **Firebase Console → Project settings → Your apps → Web app**:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_FIREBASE_*` | Standard Firebase web config (API key, project ID, etc.) |
+| `VITE_FIREBASE_APP_CHECK_KEY` | reCAPTCHA v3 **site key** (public) from App Check |
+| `VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN` | Optional; pin a debug token for local dev |
+
+> **Secrets stay out of git.** Never commit `.env`. The reCAPTCHA **secret** key belongs only in the Firebase App Check console—not in this repo.
+
+### 3. Run locally
+
+```bash
+npm run dev
+```
+
+For local Firestore with App Check enforcement, register a debug token (see `.env.example` and `scripts/setup-app-check.mjs`).
+
+### 4. Test & build
+
+```bash
+npm test
+npm run build
+```
+
+### 5. Deploy (optional)
+
+```bash
+firebase deploy --only hosting,firestore
+```
+
+---
+
+## Install as PWA
+
+**iOS (Safari):** Share → **Add to Home Screen**
+
+**Android (Chrome):** Menu → **Install app**
+
+---
+
+## License
+
+Private project. All rights reserved.
