@@ -7,7 +7,7 @@ import { auth } from './config/firebase';
 import { RegistryService } from './api/registryService';
 
 import './styles/fidelity.css';
-import { getTrackingDate, DEFAULT_DAY_START_HOUR, formatDateDisplay, readStoredAccent, persistAccentColor, accentCssVars } from './utils/logic';
+import { getTrackingDate, DEFAULT_DAY_START_HOUR, formatDateDisplay, readStoredAccent, persistAccentColor, accentCssVars, normalizeAccentColor } from './utils/logic';
 import { UI, getWidgetScaleVars } from './constants/ui';
 import { ROUTES, pathToTab, tabToPath } from './constants/routes';
 import { BRAND_ACCENT } from './api/authService';
@@ -18,6 +18,8 @@ import { useRegistry } from './hooks/useRegistry';
 import { Header } from './components/layout/Header';
 import { BottomNav } from './components/layout/BottomNav';
 import { LogoutModal } from './features/shared/LogoutModal';
+import { ConfirmModal } from './features/shared/ConfirmModal';
+import { Toast } from './features/shared/Toast';
 import { DashboardSkeleton } from './features/dashboard/components/DashboardSkeleton';
 import { ProtocolForm } from './features/shared/ProtocolForm';
 import { EditLogOverlay } from './features/history/components/EditLogOverlay';
@@ -44,12 +46,21 @@ const LoadingView = () => (
   </div>
 );
 
-const TabSkeleton = () => <div className="w-full min-h-[50vh] rounded-[32px] bg-white/[0.02] border border-white/[0.04] animate-pulse" aria-hidden="true" />;
+const TabSkeleton = () => (
+  <div className="w-full space-y-6 animate-pulse" aria-hidden="true">
+    <div className="h-48 rounded-[32px] bg-white/[0.02] border border-white/[0.04]" />
+    <div className="h-32 rounded-[32px] bg-white/[0.02] border border-white/[0.04]" />
+  </div>
+);
 
 const EmptyDashboard = React.memo(({ onAdd }) => (
-  <div className="flex-1 flex flex-col items-center justify-center py-10 md:py-20 text-center space-y-10 px-8">
+  <div className="flex-1 flex flex-col items-center justify-center py-10 md:py-20 text-center space-y-6 px-8 max-w-md mx-auto">
     <div className="w-24 h-24 rounded-[36px] bg-white/[0.02] border border-white/5 flex items-center justify-center text-white/10"><PlusCircle size={48} strokeWidth={1} /></div>
-    <button type="button" onClick={onAdd} className="h-14 px-12 rounded-[24px] bg-accent text-zinc-950 font-black uppercase tracking-[0.3em] text-[10px]">Init Node</button>
+    <div className="space-y-2">
+      <h2 className="text-lg font-bold text-white">Add your first tracker</h2>
+      <p className="text-sm text-zinc-500 leading-relaxed">Create a protocol for each product you want to log — cigarettes, RYO, pouches, and more.</p>
+    </div>
+    <button type="button" onClick={onAdd} className="h-14 px-12 rounded-[24px] bg-accent text-zinc-950 font-black uppercase tracking-[0.2em] text-[11px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/50">Add tracker</button>
   </div>
 ));
 
@@ -61,8 +72,9 @@ class FeatureErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-danger/5 border border-danger/10 rounded-[40px] m-4">
-          <AlertCircle size={32} className="text-danger mb-4" />
-          <button type="button" onClick={() => this.setState((s) => ({ hasError: false, resetKey: s.resetKey + 1 }))} className="px-8 h-12 rounded-2xl bg-white text-black font-black uppercase text-[9px]">Reload Subsystem</button>
+          <AlertCircle size={32} className="text-danger mb-4" aria-hidden="true" />
+          <p className="text-sm text-zinc-400 mb-6 max-w-xs">This section failed to load. Try reloading it.</p>
+          <button type="button" onClick={() => this.setState((s) => ({ hasError: false, resetKey: s.resetKey + 1 }))} className="px-8 h-12 rounded-2xl bg-white text-black font-black uppercase text-[9px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/50">Reload</button>
         </div>
       );
     }
@@ -136,6 +148,8 @@ const AppContent = () => {
   const [editTarget, setEditTarget] = useState(null);
   const [editProtocol, setEditProtocol] = useState(null);
   const [showLogout, setShowLogout] = useState(false);
+  const [showEndDayConfirm, setShowEndDayConfirm] = useState(false);
+  const [toast, setToast] = useState(null);
   const [themeAccent, setThemeAccent] = useState(() => readStoredAccent(BRAND_ACCENT));
 
   const navigateTab = useCallback((tab) => navigate(tabToPath(tab)), [navigate]);
@@ -192,16 +206,30 @@ const AppContent = () => {
         await updateProfile(auth.currentUser, authUpd);
       }
       if (upd.accent && user.uid) {
-        persistAccentColor(upd.accent, user.uid);
-        setThemeAccent(upd.accent);
+        const safeAccent = normalizeAccentColor(upd.accent);
+        persistAccentColor(safeAccent, user.uid);
+        setThemeAccent(safeAccent);
+        upd.accent = safeAccent;
       }
       await RegistryService.updateUserProfile(user.uid, upd);
       setSettingsError(null);
+      setToast('Settings saved');
     } catch (e) {
       setSettingsError(e?.message || 'Settings update failed');
       throw e;
     }
   }, [user]);
+
+  const handleEndDay = useCallback(async () => {
+    try {
+      await endDay();
+      setShowEndDayConfirm(false);
+      setToast('Day archived — counters reset');
+    } catch (e) {
+      setSettingsError(e?.message || 'Failed to end day');
+      setShowEndDayConfirm(false);
+    }
+  }, [endDay]);
 
   const handleLogout = useCallback(() => {
     if (user?.uid) persistAccentColor(resolvedAccent, user.uid);
@@ -253,7 +281,7 @@ const AppContent = () => {
               </div>
             )
           )}
-          <MetricBanner m={metrics} />
+          {configs.length > 0 && <MetricBanner m={metrics} />}
         </div>
       </FeatureErrorBoundary>
     </motion.div>
@@ -262,7 +290,7 @@ const AppContent = () => {
   const historyView = (
     <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full">
       <FeatureErrorBoundary name="Analytics">
-        <HistoryScreen logs={logs} configs={configs} m={metrics} onEdit={setEditTarget} onDeleteLog={deleteLog} today={trackingDay} onManualEntry={createManualEntry} onError={setSettingsError} />
+        <HistoryScreen loading={loading} logs={logs} configs={configs} m={metrics} onEdit={setEditTarget} onDeleteLog={deleteLog} today={trackingDay} onManualEntry={createManualEntry} onError={setSettingsError} onAddProtocol={() => setShowAdd(true)} />
       </FeatureErrorBoundary>
     </motion.div>
   );
@@ -305,9 +333,9 @@ const AppContent = () => {
       )}
       {displayError && (
         <div className="shrink-0 mx-auto w-full max-w-[1400px] px-4 pt-2">
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-rose-300">
-            <span className="truncate">{displayError}</span>
-            <button type="button" onClick={dismissError} className="shrink-0 text-rose-400 hover:text-white">Dismiss</button>
+          <div className="flex items-start justify-between gap-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+            <span className="selectable leading-snug">{displayError}</span>
+            <button type="button" onClick={dismissError} aria-label="Dismiss error" className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center text-rose-400 hover:text-white text-xs font-semibold">Dismiss</button>
           </div>
         </div>
       )}
@@ -316,7 +344,7 @@ const AppContent = () => {
             user={{ ...user, displayName: currentSettings.name, photoURL: currentSettings.avatar }}
             onNavigate={navigateTab}
             onRequestLogout={() => setShowLogout(true)}
-            onEndDay={endDay}
+            onRequestEndDay={() => setShowEndDayConfirm(true)}
             endDayPending={endingDay}
             trackingDayLabel={formatDateDisplay(trackingDay)}
           />
@@ -339,7 +367,17 @@ const AppContent = () => {
             <ProtocolForm isOpen={!!editProtocol} onClose={() => setEditProtocol(null)} onApply={async (d) => { await updateProtocol(editProtocol.id, d); setEditProtocol(null); }} title="Edit" initialData={editProtocol} />
           )}
           <EditLogOverlay isOpen={!!editTarget} log={editTarget} configs={configs} onClose={() => setEditTarget(null)} user={user} unitPrice={currentSettings.unitPrice} onError={setSettingsError} />
+          <ConfirmModal
+            isOpen={showEndDayConfirm}
+            onClose={() => setShowEndDayConfirm(false)}
+            onConfirm={handleEndDay}
+            title="End tracking day?"
+            message="This archives today's counts to history and resets all counters. You can still edit the archive later."
+            confirmText={endingDay ? 'Archiving…' : 'End day'}
+            confirmDisabled={endingDay}
+          />
           <LogoutModal isOpen={showLogout} onClose={() => setShowLogout(false)} onConfirm={handleLogout} />
+          <Toast message={toast} onDismiss={() => setToast(null)} />
       </>
     </div>
   );

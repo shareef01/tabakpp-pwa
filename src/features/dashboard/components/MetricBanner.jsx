@@ -57,7 +57,7 @@ export const MetricBanner = React.memo(({ m }) => {
         </Item>
 
         <div className="col-span-2 sm:col-span-1 flex flex-row sm:flex-col items-center justify-between sm:justify-center gap-2 sm:gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5 sm:pl-2 lg:pl-4 min-w-0">
-          <span className={cn(UI.LABEL, 'text-[8px] xs:text-[9px] sm:text-[10px] shrink-0')}>Sync</span>
+          <span className={cn(UI.LABEL, 'text-[8px] xs:text-[9px] sm:text-[10px] shrink-0')}>Daily quota</span>
           <div className="flex items-center gap-2 sm:gap-2.5 flex-1 sm:flex-initial justify-end sm:justify-center min-w-0">
             <span className={cn('text-[10px] xs:text-xs md:text-sm font-black tabular-nums leading-none shrink-0', isOverLimit ? 'text-rose-500' : 'text-accent')}>
               {Math.round(progress * 100)}%

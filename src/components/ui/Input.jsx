@@ -21,7 +21,7 @@ export const Input = React.memo(({ value, onChange, label, type = 'text', placeh
           autoComplete={autoComplete}
           className={cn(UI.INPUT, 'w-full', !isDark && 'bg-black/[0.05] border-black/10 text-zinc-950', inputClassName)}
         />
-        <div className="absolute inset-0 rounded-xl ring-accent/20 transition-all pointer-events-none group-focus-within/input:ring-2" />
+        <div className="absolute inset-0 rounded-2xl ring-accent/20 transition-all pointer-events-none group-focus-within/input:ring-2" />
       </div>
     </div>
   );

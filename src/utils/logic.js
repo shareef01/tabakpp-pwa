@@ -556,8 +556,18 @@ export const persistAccentColor = (hex, uid = null) => {
   }
 };
 
-export const accentCssVars = (hex) => ({
-  '--accent': hex,
-  '--accent-rgb': hexToRgbValues(hex),
-});
+/** Avoid pure white accent — unreadable on light borders and nav indicator */
+export const normalizeAccentColor = (hex) => {
+  const h = String(hex || '').trim().toUpperCase();
+  if (h === '#FFFFFF' || h === '#FFF') return '#E4E4E7';
+  return hex;
+};
+
+export const accentCssVars = (hex) => {
+  const safe = normalizeAccentColor(hex);
+  return {
+    '--accent': safe,
+    '--accent-rgb': hexToRgbValues(safe),
+  };
+};
 

@@ -119,7 +119,7 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
     { name: 'Salmon Core', hex: '#FF5F5F' },
     { name: 'Neon Cyber', hex: '#00D1FF' },
     { name: 'Volt Lime', hex: '#D4FF32' },
-    { name: 'Pure White', hex: '#FFFFFF' },
+    { name: 'Soft Silver', hex: '#E4E4E7' },
     { name: 'Rose Metal', hex: '#FF4B4B' },
     { name: 'Royal Resin', hex: '#8B5CF6' },
     { name: 'Deep Sage', hex: '#10B981' },
@@ -160,7 +160,7 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
                     <User size={40} className="sm:w-12 sm:h-12" />
                   </div>
                 )}
-                <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                <label className="absolute inset-0 bg-black/50 flex items-center justify-center cursor-pointer opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" aria-label="Change profile photo">
                   <Camera size={22} className="text-white" />
                   <input
                     type="file"
@@ -318,7 +318,7 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
                     : 'bg-white/[0.04] text-zinc-500 border border-white/[0.08] opacity-70 cursor-not-allowed'
                 )}
               >
-                Apply Global Calibration
+                Save unit price
               </button>
             </div>
           </div>
@@ -330,7 +330,7 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
           <SectionHeader icon={Palette} title="Interface" />
           <div className="space-y-3 sm:space-y-4">
             <div className="flex flex-col gap-2.5">
-              <FieldLabel>Accent Matrix</FieldLabel>
+              <FieldLabel>Accent color</FieldLabel>
               <div className="flex flex-wrap gap-2 sm:gap-2.5">
                 {ACCENT_OPTIONS.map((opt) => (
                   <button
@@ -383,7 +383,7 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
             </div>
 
             <div className="flex flex-col gap-2.5">
-              <FieldLabel>Geometry Matrix</FieldLabel>
+              <FieldLabel>Widget size</FieldLabel>
               <div className="flex bg-black/60 border border-white/5 rounded-2xl p-1 gap-1 h-10 sm:h-11">
                 {['SMALL', 'MEDIUM', 'LARGE'].map((size) => {
                   const Icon = SIZE_ICONS[size];

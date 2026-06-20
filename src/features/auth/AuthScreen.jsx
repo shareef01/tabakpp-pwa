@@ -39,6 +39,7 @@ export const AuthScreen = React.memo(() => {
   const [p, setP] = useState('');
   const [n, setN] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [msg, setMsg] = useState({ t: '', c: '' });
 
   const switchMode = (next) => {
@@ -56,7 +57,7 @@ export const AuthScreen = React.memo(() => {
 
   const handle = async (ev) => {
     ev?.preventDefault?.();
-    if (loading) return;
+    if (loading || googleLoading) return;
 
     const err = validate();
     if (err) {
@@ -86,8 +87,8 @@ export const AuthScreen = React.memo(() => {
   };
 
   const handleGoogle = async () => {
-    if (loading) return;
-    setLoading(true);
+    if (loading || googleLoading) return;
+    setGoogleLoading(true);
     setMsg({ t: '', c: '' });
     try {
       const result = await signInWithGoogle();
@@ -97,13 +98,13 @@ export const AuthScreen = React.memo(() => {
         setMsg({ t: 'FAULT', c: friendlyAuthError(err?.code) });
       }
     } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
   const submitLabel = mode === 'LOGIN' ? 'Sign in' : mode === 'REGISTER' ? 'Create account' : 'Send reset link';
   const fieldClass = '[&_label]:text-[11px] [&_label]:font-semibold [&_label]:tracking-wide [&_label]:text-zinc-400';
-  const inputShape = 'h-12 rounded-[14px] border-white/[0.08] bg-black/30 placeholder:text-zinc-600 focus:border-accent/40';
+  const inputShape = 'h-12 rounded-2xl border-white/[0.08] bg-black/30 placeholder:text-zinc-600 focus:border-accent/40';
 
   return (
     <div className="auth-screen min-h-full w-full bg-[#09090B] text-white font-inter overflow-x-hidden">
@@ -111,7 +112,7 @@ export const AuthScreen = React.memo(() => {
 
       <div className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-center px-4 py-6 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="w-full max-w-[420px] flex flex-col items-center">
-          <div className="mb-10 sm:mb-12 text-center select-none" aria-hidden="true">
+          <div className="auth-hero mb-6 sm:mb-10 md:mb-12 text-center select-none" aria-hidden="true">
             <div className="relative inline-flex flex-col items-center">
               <div className="pointer-events-none absolute -inset-x-12 -top-10 bottom-[-1rem] rounded-full bg-accent/[0.08] blur-3xl" />
               <div className="relative inline-flex items-end leading-none animate-brand">
@@ -132,9 +133,11 @@ export const AuthScreen = React.memo(() => {
                 <p className="mt-1.5 text-sm text-zinc-500 leading-relaxed">We&apos;ll email you a link to choose a new password.</p>
               </div>
             ) : (
-              <div className="relative mb-5 grid grid-cols-2 gap-1 rounded-[16px] border border-white/[0.07] bg-black/50 p-1">
+              <>
+                <h1 className="sr-only">Sign in to T++</h1>
+                <div className="relative mb-5 grid grid-cols-2 gap-1 rounded-2xl border border-white/[0.07] bg-black/50 p-1" role="tablist" aria-label="Authentication mode">
                 <motion.div
-                  className="absolute top-1 bottom-1 rounded-[12px] bg-accent shadow-[0_0_18px_-4px_rgba(var(--accent-rgb),0.45)]"
+                  className="absolute top-1 bottom-1 rounded-xl bg-accent shadow-[0_0_18px_-4px_rgba(var(--accent-rgb),0.45)]"
                   layout
                   transition={{ type: 'spring', stiffness: 420, damping: 36 }}
                   style={{
@@ -144,9 +147,11 @@ export const AuthScreen = React.memo(() => {
                 />
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={mode === 'LOGIN'}
                   onClick={() => switchMode('LOGIN')}
                   className={cn(
-                    'relative z-10 h-11 rounded-[12px] text-sm font-semibold transition-colors',
+                    'relative z-10 h-11 rounded-xl text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent/50',
                     mode === 'LOGIN' ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'
                   )}
                 >
@@ -154,15 +159,18 @@ export const AuthScreen = React.memo(() => {
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={mode === 'REGISTER'}
                   onClick={() => switchMode('REGISTER')}
                   className={cn(
-                    'relative z-10 h-11 rounded-[12px] text-sm font-semibold transition-colors',
+                    'relative z-10 h-11 rounded-xl text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent/50',
                     mode === 'REGISTER' ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-300'
                   )}
                 >
                   Sign up
                 </button>
               </div>
+              </>
             )}
 
             <form className="flex flex-col gap-4 sm:gap-5" onSubmit={handle}>
@@ -190,11 +198,11 @@ export const AuthScreen = React.memo(() => {
                 <>
                   <button
                     type="button"
-                    disabled={loading}
+                    disabled={googleLoading || loading}
                     onClick={handleGoogle}
-                    className="w-full h-12 rounded-[14px] border border-white/[0.1] bg-white/[0.04] text-white text-sm font-semibold flex items-center justify-center gap-2.5 transition-all hover:bg-white/[0.07] active:scale-[0.98] disabled:opacity-60"
+                    className="w-full h-12 rounded-2xl border border-white/[0.1] bg-white/[0.04] text-white text-sm font-semibold flex items-center justify-center gap-2.5 transition-all hover:bg-white/[0.07] active:scale-[0.98] disabled:opacity-60"
                   >
-                    {loading ? <Loader2 className="animate-spin" size={18} /> : (
+                    {googleLoading ? <Loader2 className="animate-spin" size={18} /> : (
                       <>
                         <GoogleMark />
                         Continue with Google
@@ -262,7 +270,7 @@ export const AuthScreen = React.memo(() => {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || googleLoading}
                 className="w-full h-12 rounded-[14px] bg-accent text-zinc-950 text-sm font-bold shadow-[0_0_28px_-6px_rgba(var(--accent-rgb),0.45)] transition-all hover:brightness-105 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center"
               >
                 {loading ? <Loader2 className="animate-spin" size={20} /> : submitLabel}
@@ -279,13 +287,22 @@ export const AuthScreen = React.memo(() => {
                   </button>
                 )}
                 {mode === 'RESET' && (
-                  <button
-                    type="button"
-                    onClick={() => switchMode('LOGIN')}
-                    className="text-xs sm:text-sm font-medium text-zinc-500 hover:text-white transition-colors"
-                  >
-                    Back to sign in
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => switchMode('LOGIN')}
+                      className="text-xs sm:text-sm font-medium text-zinc-500 hover:text-white transition-colors"
+                    >
+                      Back to sign in
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => switchMode('REGISTER')}
+                      className="text-xs sm:text-sm font-medium text-zinc-500 hover:text-accent transition-colors"
+                    >
+                      Create an account
+                    </button>
+                  </>
                 )}
               </div>
             </form>

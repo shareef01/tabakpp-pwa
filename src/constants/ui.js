@@ -77,6 +77,11 @@ export const UI = {
 
   MODAL_OVERLAY: 'fixed inset-0 z-[5000] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 isolate pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]',
 
+  /** Shared modal panel — radius/padding aligned across overlays */
+  MODAL_SHELL: 'bg-[#121214]/95 border border-white/[0.1] rounded-[32px] w-full shadow-2xl overflow-hidden mx-auto',
+
+  SURFACE: 'bg-[#121214]/80 backdrop-blur-2xl border border-white/[0.09]',
+
   NAV_BAR_DOCK: 'nav-dock fixed bottom-0 inset-x-0 z-[500] pointer-events-none flex justify-center px-4 pb-[max(0.625rem,env(safe-area-inset-bottom))]',
   NAV_BAR_INNER: 'nav-dock-bar pointer-events-auto relative flex items-center w-full max-w-[11.5rem] p-1 rounded-full border border-white/[0.09] bg-[#141416]/92 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.06)]',
 

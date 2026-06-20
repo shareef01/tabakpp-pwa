@@ -29,7 +29,7 @@ export const Button = React.memo(({ children, onClick, className, variant = 'pri
       disabled={disabled}
       onClick={onClick}
       style={style}
-      className={cn(UI.BUTTON_BASE, variants[variant], sizes[size], className)}
+      className={cn(UI.BUTTON_BASE, variants[variant], sizes[size], 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/50', className)}
     >
       <span className="relative z-10 flex items-center gap-2">{children}</span>
     </motion.button>

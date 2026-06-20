@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "screenshots": "node scripts/capture-screenshots.mjs"
+    "screenshots": "node scripts/capture-screenshots.mjs",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

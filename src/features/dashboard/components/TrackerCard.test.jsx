@@ -37,13 +37,13 @@ describe('TrackerCard Component', () => {
 
   it('fires increment on plus click', () => {
     const { onInc } = setup();
-    fireEvent.click(screen.getByLabelText('Increase'));
+    fireEvent.click(screen.getByLabelText('Increase Vanelle Blue'));
     expect(onInc).toHaveBeenCalledTimes(1);
   });
 
   it('fires decrement on minus click', () => {
     const { onDec } = setup();
-    fireEvent.click(screen.getByLabelText('Decrease'));
+    fireEvent.click(screen.getByLabelText('Decrease Vanelle Blue'));
     expect(onDec).toHaveBeenCalledTimes(1);
   });
 

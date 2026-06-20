@@ -25,6 +25,8 @@ export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index,
     : type === 'SIMPLE' ? <RingProgress {...gaugeProps} />
     : <GenericBarProgress {...gaugeProps} />;
 
+  const trackerName = config?.name || 'tracker';
+
   return (
     <motion.article
       layout
@@ -76,7 +78,7 @@ export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index,
         <button
           type="button"
           onClick={onDec}
-          aria-label="Decrease"
+          aria-label={`Decrease ${trackerName}`}
           className={cn(
             'tracker-btn flex-1 rounded-xl flex items-center justify-center transition-all duration-150',
             'bg-white/[0.04] border border-white/[0.08] text-zinc-400',
@@ -89,7 +91,7 @@ export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index,
         <button
           type="button"
           onClick={onInc}
-          aria-label="Increase"
+          aria-label={`Increase ${trackerName}`}
           className={cn(
             'tracker-btn flex-1 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-[0.97]',
             isLimitReached

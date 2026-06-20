@@ -98,7 +98,7 @@ export const ProtocolForm = ({ isOpen, onClose, onApply, title, initialData }) =
         >
           <div className="flex justify-between items-center">
             <div className="space-y-1">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Protocol Config</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Protocol</h3>
               <span id={titleId} className="text-2xl font-[900] tracking-tighter uppercase text-[#FAFAFA] leading-none">{title}</span>
             </div>
             <button type="button" onClick={onClose} aria-label="Close" className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-neutral-500 hover:text-[#FAFAFA]"><X size={20} strokeWidth={3} /></button>
@@ -106,20 +106,20 @@ export const ProtocolForm = ({ isOpen, onClose, onApply, title, initialData }) =
 
           <div className="grid grid-cols-[1fr,110px] gap-4">
             <div className="space-y-2">
-              <span className={UI.LABEL}>Identity</span>
+              <span className={UI.LABEL}>Name</span>
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Marlboro Red" className={cn(UI.INPUT, 'h-12 w-full bg-black/40')} />
             </div>
             <div className="space-y-2 text-center">
-              <span className={UI.LABEL}>Quota</span>
+              <span className={UI.LABEL}>Daily limit</span>
               <input type="number" value={limit} onChange={(e) => setLimit(e.target.value)} className={cn(UI.INPUT, 'h-12 text-center w-full bg-black/40 tabular-nums')} />
             </div>
           </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className={UI.LABEL}>Instrument Engine</span>
+              <span className={UI.LABEL}>Tracker type</span>
               <button type="button" onClick={() => setIsPrimaryTracked(!isPrimaryTracked)} className={cn('flex items-center gap-2.5 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase', isPrimaryTracked ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-white/5 border-white/10 text-white/30')}>
-                {isPrimaryTracked ? 'Master Stream' : 'Sub-Log Only'}
+                {isPrimaryTracked ? 'Primary tracker' : 'Secondary only'}
               </button>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -155,7 +155,7 @@ export const ProtocolForm = ({ isOpen, onClose, onApply, title, initialData }) =
             </div>
           </div>
 
-          <Button onClick={handleSubmit} disabled={saving} className="w-full h-16 text-[11px] font-black uppercase tracking-[0.4em]">{saving ? 'Saving…' : 'Init Entry'}</Button>
+          <Button onClick={handleSubmit} disabled={saving} className="w-full h-16 text-[11px] font-black uppercase tracking-[0.4em]">{saving ? 'Saving…' : 'Save protocol'}</Button>
         </div>
       )}
     </ModalFrame>

@@ -37,7 +37,7 @@ export const ManualEntryOverlay = ({ isOpen, date, configs, onClose, onApply }) 
         <div className="bg-[#0a0a0c] border border-white/10 rounded-[40px] w-full max-w-[480px] p-6 md:p-10 shadow-2xl flex flex-col max-h-[90vh] mx-auto">
           <div className="flex justify-between items-center mb-10">
             <div className="space-y-1">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Registry Input</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Manual entry</h3>
               <div className="flex items-center gap-3">
                 <Calendar size={18} className="text-accent" />
                 <span id={titleId} className="text-2xl font-[1000] tracking-tighter uppercase text-white block leading-none">
@@ -65,7 +65,7 @@ export const ManualEntryOverlay = ({ isOpen, date, configs, onClose, onApply }) 
           </div>
 
           <Button onClick={handleApply} disabled={saving} className="w-full h-16 text-[11px] font-black tracking-[0.3em] rounded-[20px]">
-            <Database size={18} className="mr-3" strokeWidth={3} />{saving ? 'Saving…' : 'Commit Entry'}
+            <Database size={18} className="mr-3" strokeWidth={3} />{saving ? 'Saving…' : 'Save entry'}
           </Button>
         </div>
       )}

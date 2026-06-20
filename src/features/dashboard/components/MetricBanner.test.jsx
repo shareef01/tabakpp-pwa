@@ -16,7 +16,7 @@ describe('MetricBanner Component', () => {
     expect(screen.getByText('Remaining')).toBeDefined();
     expect(screen.getByText('Spent Today')).toBeDefined();
     expect(screen.getByText('Control Streak')).toBeDefined();
-    expect(screen.getByText('Sync')).toBeDefined();
+    expect(screen.getByText('Daily quota')).toBeDefined();
   });
 
   it('shows remaining units', () => {

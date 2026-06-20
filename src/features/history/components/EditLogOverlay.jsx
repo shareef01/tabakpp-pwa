@@ -41,7 +41,7 @@ export const EditLogOverlay = ({ isOpen, log, configs, onClose, user, unitPrice 
         <div className="bg-[#0a0a0c] border border-white/10 rounded-[32px] w-full max-w-[440px] p-6 md:p-8 shadow-2xl flex flex-col max-h-[85vh] mx-auto">
           <div className="flex justify-between items-center mb-8">
             <div className="space-y-0.5">
-              <h3 className="text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500">History Override</h3>
+              <h3 className="text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500">Edit history</h3>
               <span id={titleId} className="text-xl font-[1000] tracking-tighter uppercase text-white block leading-none">
                 {new Date(`${log.logDate}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase()}
               </span>
@@ -64,7 +64,7 @@ export const EditLogOverlay = ({ isOpen, log, configs, onClose, user, unitPrice 
 
           <div className="mt-8">
             <Button onClick={handleApply} disabled={saving} className="w-full h-14 text-[10px] font-black tracking-[0.2em]">
-              <Database size={14} className="mr-2" strokeWidth={3} />{saving ? 'Saving…' : 'Commit Override'}
+              <Database size={14} className="mr-2" strokeWidth={3} />{saving ? 'Saving…' : 'Save changes'}
             </Button>
           </div>
         </div>

@@ -15,7 +15,7 @@ export const DashboardSkeleton = React.memo(({ widgetSize }) => (
         <div
           key={i}
           className={cn(
-            'tracker-card bg-neutral-800/10 border border-white/5 rounded-[22px] xs:rounded-[26px] md:rounded-[34px]',
+            UI.TRACKER_CARD,
             HEIGHT[widgetSize] || HEIGHT.MEDIUM
           )}
         />

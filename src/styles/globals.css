@@ -22,12 +22,18 @@
   }
 
   #root {
+    -webkit-user-select: none;
     user-select: none;
   }
 
-  /* Enable selection only on inputs */
-  input, textarea {
+  /* Allow copying ledger text, errors, and form fields */
+  input, textarea, [data-selectable], .selectable {
+    -webkit-user-select: text !important;
     user-select: text !important;
+  }
+
+  .tracker-label {
+    font-size: var(--tracker-label-fs, 0.5625rem);
   }
 }
 
@@ -106,7 +112,7 @@
   }
 
   .settings-card {
-    background: rgba(22, 22, 26, 0.88);
+    background: rgba(18, 18, 20, 0.88);
     border-color: rgba(255, 255, 255, 0.1);
   }
 
@@ -175,7 +181,15 @@
     height: var(--tracker-btn-h, 3rem);
   }
 
-  /* Short landscape phones — tighten vertical rhythm */
+  /* Auth — smaller logo on short viewports */
+  @media (max-height: 700px) {
+    .auth-hero span.text-accent {
+      font-size: 4rem !important;
+    }
+    .auth-hero {
+      margin-bottom: 1rem !important;
+    }
+  }
   @media (max-height: 32rem) and (orientation: landscape) {
     .track-dashboard {
       gap: 0.75rem;
