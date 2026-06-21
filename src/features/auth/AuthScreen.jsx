@@ -200,9 +200,15 @@ export const AuthScreen = React.memo(() => {
                     type="button"
                     disabled={googleLoading || loading}
                     onClick={handleGoogle}
-                    className="w-full h-12 rounded-2xl border border-white/[0.1] bg-white/[0.04] text-white text-sm font-semibold flex items-center justify-center gap-2.5 transition-all hover:bg-white/[0.07] active:scale-[0.98] disabled:opacity-60"
+                    aria-busy={googleLoading}
+                    className="w-full h-12 rounded-2xl border border-white/[0.1] bg-white/[0.04] text-white text-sm font-semibold flex items-center justify-center gap-2.5 transition-all hover:bg-white/[0.07] active:scale-[0.98] disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/50"
                   >
-                    {googleLoading ? <Loader2 className="animate-spin" size={18} /> : (
+                    {googleLoading ? (
+                      <>
+                        <Loader2 className="animate-spin" size={18} aria-hidden="true" />
+                        Signing in…
+                      </>
+                    ) : (
                       <>
                         <GoogleMark />
                         Continue with Google
@@ -281,7 +287,7 @@ export const AuthScreen = React.memo(() => {
                   <button
                     type="button"
                     onClick={() => switchMode('RESET')}
-                    className="text-xs sm:text-sm font-medium text-zinc-500 hover:text-accent transition-colors"
+                    className="text-xs sm:text-sm font-medium text-zinc-500 hover:text-accent transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/50 rounded-lg px-1"
                   >
                     Forgot password?
                   </button>
@@ -298,7 +304,7 @@ export const AuthScreen = React.memo(() => {
                     <button
                       type="button"
                       onClick={() => switchMode('REGISTER')}
-                      className="text-xs sm:text-sm font-medium text-zinc-500 hover:text-accent transition-colors"
+                      className="text-xs sm:text-sm font-medium text-zinc-500 hover:text-accent transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/50 rounded-lg px-1"
                     >
                       Create an account
                     </button>

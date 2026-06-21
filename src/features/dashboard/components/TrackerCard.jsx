@@ -15,6 +15,8 @@ export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index,
   const limit = config?.limit ?? 1;
   const isLimitReached = count >= limit;
   const icons = ICON[globalSize] || ICON.MEDIUM;
+  const trackerName = config?.name || 'Unnamed tracker';
+  const displayName = config?.name || 'Unnamed tracker';
 
   const gaugeProps = { count, limit, size: globalSize };
   const type = config?.type;
@@ -25,8 +27,6 @@ export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index,
     : type === 'SIMPLE' ? <RingProgress {...gaugeProps} />
     : <GenericBarProgress {...gaugeProps} />;
 
-  const trackerName = config?.name || 'tracker';
-
   return (
     <motion.article
       layout
@@ -35,6 +35,7 @@ export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index,
       transition={{ delay: (index ?? 0) * 0.05, duration: 0.35 }}
       data-testid={`tracker-card-${index ?? 0}`}
       data-widget-size={globalSize}
+      aria-label={`${displayName}, ${count} of ${limit} today`}
       className={cn(
         UI.TRACKER_CARD,
         'flex flex-col',
@@ -44,13 +45,13 @@ export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index,
     >
       <div className="flex items-center justify-between gap-3 min-w-0 mb-[clamp(0.875rem,2.5vw,1.5rem)]">
         <span
-          data-testid="blend-name"
+          data-testid="tracker-name"
           className="tracker-label font-[800] uppercase truncate text-zinc-500 tracking-[0.28em] sm:tracking-[0.3em]"
         >
-          {config?.name || 'REGISTRY'}
+          {displayName}
         </span>
         <span className={cn(UI.LABEL, 'shrink-0 tabular-nums text-zinc-600 !text-[9px] xs:!text-[10px]')}>
-          {config?.limit}Q
+          {limit}/day
         </span>
       </div>
 
@@ -65,6 +66,8 @@ export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index,
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 420, damping: 30 }}
           data-testid="counter-value"
+          aria-live="polite"
+          aria-atomic="true"
           className={cn(
             'counter-display font-[900] tabular-nums tracking-tighter leading-none',
             isLimitReached ? 'text-rose-400' : 'text-[#FAFAFA]'

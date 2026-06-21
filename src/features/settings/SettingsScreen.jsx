@@ -210,7 +210,7 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
                     <span className="text-xl sm:text-2xl md:text-3xl font-[900] tracking-tighter text-white uppercase truncate">
                       {settings?.name || user?.displayName || 'User'}
                     </span>
-                    <button type="button" onClick={() => setIsEditingName(true)} className="text-white/10 hover:text-accent transition-all shrink-0">
+                    <button type="button" onClick={() => setIsEditingName(true)} aria-label="Edit display name" className="text-zinc-500 hover:text-accent transition-all shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">
                       <Edit3 size={16} />
                     </button>
                   </div>
@@ -223,7 +223,7 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
                 'px-3 sm:px-4 py-1.5 rounded-lg border text-[10px] sm:text-[11px] font-bold uppercase tracking-wide',
                 sessionOpen ? 'bg-accent/5 border-accent/10 text-accent' : 'bg-white/[0.03] border-white/10 text-zinc-400'
               )}>
-                {sessionOpen ? 'Open Session' : 'Session Clear'}
+                {sessionOpen ? 'Logging today' : 'No counts yet'}
               </div>
             </div>
           </div>
@@ -245,7 +245,7 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
                 }}
                 className={cn(
                   'flex-1 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wide transition-all',
-                  purchaseType === 'PACK' ? 'bg-white/5 text-white' : 'text-white/10 hover:text-white/20'
+                  purchaseType === 'PACK' ? 'bg-white/5 text-white' : 'text-zinc-500 hover:text-zinc-300'
                 )}
               >
                 Standard Pack
@@ -262,7 +262,7 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
                 }}
                 className={cn(
                   'flex-1 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wide transition-all',
-                  purchaseType === 'RYO' ? 'bg-white/5 text-white' : 'text-white/10 hover:text-white/20'
+                  purchaseType === 'RYO' ? 'bg-white/5 text-white' : 'text-zinc-500 hover:text-zinc-300'
                 )}
               >
                 RYO Pouch
@@ -271,9 +271,10 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
 
             <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
               <div className="flex flex-col gap-2">
-                <FieldLabel>{purchaseType === 'PACK' ? 'Pack Price' : 'Pouch Price'}</FieldLabel>
+                <label htmlFor="settings-pouch-price" className="settings-field-label">{purchaseType === 'PACK' ? 'Pack Price' : 'Pouch Price'}</label>
                 <div className="relative">
                   <input
+                    id="settings-pouch-price"
                     type="number"
                     step="0.01"
                     value={pouchPrice}
@@ -284,9 +285,10 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <FieldLabel>{purchaseType === 'PACK' ? 'Unit Count' : 'Est. Yield'}</FieldLabel>
+                <label htmlFor="settings-yield" className="settings-field-label">{purchaseType === 'PACK' ? 'Unit Count' : 'Est. Yield'}</label>
                 <div className="relative">
                   <input
+                    id="settings-yield"
                     type="number"
                     value={estimatedYield}
                     onChange={(e) => setEstimatedYield(e.target.value)}
@@ -338,7 +340,7 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
                     type="button"
                     onClick={() => saveSettings({ accent: opt.hex }).catch(() => {})}
                     className={cn(
-                      'w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 transition-all duration-300',
+                      'w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 transition-all duration-300',
                       settings?.accent === opt.hex ? 'border-white scale-110 shadow-lg shadow-white/10' : 'border-transparent opacity-40 hover:opacity-100'
                     )}
                     style={{ backgroundColor: opt.hex }}
@@ -413,13 +415,13 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
               <div className="w-8 h-8 sm:w-9 sm:h-9 bg-white/[0.04] rounded-xl text-white border border-white/5 flex items-center justify-center shadow-inner shrink-0">
                 <Layers size={16} strokeWidth={2.5} className="sm:w-[18px] sm:h-[18px]" />
               </div>
-              <span className="text-lg sm:text-xl font-[900] tracking-tight uppercase text-white leading-tight truncate">Protocols</span>
+              <span className="text-lg sm:text-xl font-[900] tracking-tight uppercase text-white leading-tight truncate">Trackers</span>
             </div>
             <button
               type="button"
               onClick={onAdd}
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent text-zinc-950 flex items-center justify-center shadow-lg active:scale-90 transition-all hover:brightness-110 shrink-0"
-              aria-label="Add protocol"
+              aria-label="Add tracker"
             >
               <Plus size={20} strokeWidth={3.5} />
             </button>
@@ -432,10 +434,10 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
                 className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 bg-white/[0.02] rounded-xl sm:rounded-2xl border border-white/5 group hover:border-white/10 transition-all"
               >
                 <div className="flex flex-col gap-1 shrink-0">
-                  <button type="button" onClick={() => onReo?.(c.id, 'up')} className="text-white/10 hover:text-white transition-colors" aria-label="Move up">
+                  <button type="button" onClick={() => onReo?.(c.id, 'up')} className="min-w-[44px] min-h-[22px] flex items-center justify-center text-zinc-500 hover:text-white transition-colors" aria-label="Move up">
                     <ChevronUp size={16} />
                   </button>
-                  <button type="button" onClick={() => onReo?.(c.id, 'down')} className="text-white/10 hover:text-white transition-colors" aria-label="Move down">
+                  <button type="button" onClick={() => onReo?.(c.id, 'down')} className="min-w-[44px] min-h-[22px] flex items-center justify-center text-zinc-500 hover:text-white transition-colors" aria-label="Move down">
                     <ChevronDown size={16} />
                   </button>
                 </div>
@@ -449,17 +451,17 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                  <button type="button" onClick={() => onEditP?.(c)} className="p-2 sm:p-2.5 rounded-xl bg-white/5 text-neutral-500 hover:text-white transition-all" aria-label="Edit">
+                  <button type="button" onClick={() => onEditP?.(c)} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-white/5 text-neutral-500 hover:text-white transition-all" aria-label={`Edit ${c.name}`}>
                     <Edit3 size={14} />
                   </button>
-                  <button type="button" onClick={() => setDeleteTarget(c.id)} className="p-2 sm:p-2.5 rounded-xl bg-white/5 text-neutral-500 hover:text-rose-500 transition-all" aria-label="Delete">
+                  <button type="button" onClick={() => setDeleteTarget(c.id)} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-white/5 text-neutral-500 hover:text-rose-500 transition-all" aria-label={`Delete ${c.name}`}>
                     <Trash2 size={14} />
                   </button>
                 </div>
               </div>
             )) : (
               <div className="py-8 text-center text-zinc-600 text-xs font-medium border-2 border-dashed border-white/10 rounded-xl sm:rounded-2xl">
-                No protocols yet — tap + to add one
+                No trackers yet — tap + to add one
               </div>
             )}
           </div>
@@ -476,7 +478,7 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
             setDeleteTarget(null);
           } catch { /* error surfaced by hook */ }
         }}
-        title="Delete Protocol?"
+        title="Delete tracker?"
         message="This removes the tracker and its configuration permanently."
         confirmText="Delete"
       />

@@ -45,7 +45,7 @@ describe('Header Component', () => {
     const { onNavigate } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Profile menu' }));
     fireEvent.click(screen.getByText('Settings'));
-    expect(onNavigate).toHaveBeenCalledWith('control');
+    expect(onNavigate).toHaveBeenCalledWith('settings');
   });
 
   it('fires end day when button clicked', () => {

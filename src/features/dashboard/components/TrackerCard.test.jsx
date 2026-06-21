@@ -28,11 +28,11 @@ describe('TrackerCard Component', () => {
     };
   };
 
-  it('renders correct blend name and count', () => {
+  it('renders tracker name and count', () => {
     setup();
-    expect(screen.getByTestId('blend-name')).toHaveTextContent('Vanelle Blue');
+    expect(screen.getByTestId('tracker-name')).toHaveTextContent('Vanelle Blue');
     expect(screen.getByTestId('counter-value')).toHaveTextContent('5');
-    expect(screen.getByText('10Q')).toBeDefined();
+    expect(screen.getByText('10/day')).toBeDefined();
   });
 
   it('fires increment on plus click', () => {

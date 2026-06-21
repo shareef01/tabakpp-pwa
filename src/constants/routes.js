@@ -9,7 +9,7 @@ export const ROUTES = {
 export const TAB = {
   TRACK: 'track',
   HISTORY: 'history',
-  SETTINGS: 'control',
+  SETTINGS: 'settings',
 };
 
 const TAB_TO_PATH = {

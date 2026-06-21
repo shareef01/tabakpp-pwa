@@ -12,7 +12,7 @@ export const Button = React.memo(({ children, onClick, className, variant = 'pri
     primary: "bg-accent text-zinc-950 hover:brightness-105 active:bg-accent/90 shadow-[0_0_24px_-4px_rgba(var(--accent-rgb),0.25)]",
     secondary: "bg-white/[0.04] text-white border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.12]",
     danger: "bg-rose-500 text-white hover:bg-rose-600 active:bg-rose-700 shadow-[0_0_24px_-4px_rgba(244,63,94,0.25)]",
-    ghost: "bg-transparent text-[#888888] hover:text-white hover:bg-white/[0.04]",
+    ghost: "bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.04]",
     outline: "bg-transparent border border-accent/20 text-inherit hover:border-accent/40 hover:bg-accent/[0.02]"
   };
 

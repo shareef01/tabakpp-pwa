@@ -16,7 +16,7 @@ const InsightCard = React.memo(({ icon: Icon, label, val, sub, color, onInfo }) 
      <div className={cn('p-3 rounded-2xl bg-white/[0.02] mb-3 border border-white/5', color)}><Icon size={20} /></div>
      <span className="text-2xl md:text-3xl font-[900] tracking-tighter tabular-nums mb-1 text-[#FAFAFA]">{val ?? 0}</span>
      <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">{sub}</span>
-     <span className="text-[8px] font-bold text-neutral-600 uppercase tracking-widest mt-1 opacity-60">{label}</span>
+     <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest mt-1">{label}</span>
   </div>
 ));
 
@@ -105,9 +105,9 @@ export const HistoryScreen = React.memo(({ loading = false, logs = [], configs =
        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-stretch">
          <div className="lg:col-span-4 flex flex-col gap-6 md:gap-8">
            <div className="grid grid-cols-1 xs:grid-cols-3 lg:grid-cols-1 gap-4 md:gap-6 flex-1">
-             <InsightCard icon={TrendingUp} label="Control Streak" val={m?.streak || 0} sub="Days In Limit" color="text-amber-400" onInfo={() => setInfoType('streak')} />
-             <InsightCard icon={Wallet} label="Economy" val={formatCurrency(m?.savedLifetime ?? m?.saved ?? 0)} sub="All-Time Preserved" color="text-emerald-400" onInfo={() => setInfoType('saved')} />
-             <InsightCard icon={Activity} label="System" val={`${Math.floor((m?.recovered || 0)/60)}H`} sub="Recovered" color="text-rose-400" onInfo={() => setInfoType('health')} />
+             <InsightCard icon={TrendingUp} label="Days within limit" val={m?.streak || 0} sub="Day streak" color="text-amber-400" onInfo={() => setInfoType('streak')} />
+             <InsightCard icon={Wallet} label="Lifetime savings" val={formatCurrency(m?.savedLifetime ?? m?.saved ?? 0)} sub="Total preserved" color="text-emerald-400" onInfo={() => setInfoType('saved')} />
+             <InsightCard icon={Activity} label="Time recovered" val={`${Math.floor((m?.recovered || 0)/60)}H`} sub="Estimated" color="text-rose-400" onInfo={() => setInfoType('health')} />
            </div>
 
            <div
@@ -153,7 +153,7 @@ export const HistoryScreen = React.memo(({ loading = false, logs = [], configs =
                            </div>
                         )}
                      </div>
-                     <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.15em] group-hover:opacity-100 group-hover:text-accent transition-all tabular-nums">{total} Units Logged</span>
+                     <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-[0.15em] group-hover:text-accent transition-all tabular-nums">{total} units logged</span>
                    </div>
                    <div className="flex items-center gap-2.5 shrink-0">
                      <button type="button" onClick={() => onEdit && onEdit(log)} aria-label={`Edit entry for ${formatDateDisplay(log.logDate)}`} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-white/5 text-neutral-500 hover:text-[#FAFAFA] transition-all"><Edit2 size={16} /></button>
@@ -165,7 +165,7 @@ export const HistoryScreen = React.memo(({ loading = false, logs = [], configs =
                <div className="py-16 px-6 text-center border-2 border-dashed border-white/10 rounded-[32px] space-y-4">
                  <p className="text-sm text-zinc-500">No history yet — log from Track or add a past entry above.</p>
                  {onAddProtocol && (
-                   <button type="button" onClick={onAddProtocol} className="text-xs font-bold uppercase tracking-widest text-accent hover:brightness-110">Add a tracker in Settings</button>
+                   <button type="button" onClick={onAddProtocol} className="text-xs font-bold uppercase tracking-widest text-accent hover:brightness-110">Add your first tracker</button>
                  )}
                </div>
              )}
@@ -178,7 +178,7 @@ export const HistoryScreen = React.memo(({ loading = false, logs = [], configs =
 
        <AnimatePresence>
          {showManualInit && (
-           <ManualEntryOverlay isOpen={showManualInit} date={newEntryDate} configs={configs || []} onClose={() => setShowManualInit(false)} onApply={onManualEntry} onAddProtocol={onAddProtocol} />
+           <ManualEntryOverlay isOpen={showManualInit} date={newEntryDate} configs={configs || []} onClose={() => setShowManualInit(false)} onApply={onManualEntry} onAddTracker={onAddProtocol} />
          )}
        </AnimatePresence>
     </motion.div>

@@ -1,11 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { User, LogOut, ChevronDown, Layout, Settings, BarChart3, Sunrise } from 'lucide-react';
 import { cn } from '../../utils/system';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const MENU_ITEMS = [
+  { id: 'track', icon: Layout, label: 'Track' },
+  { id: 'history', icon: BarChart3, label: 'History' },
+  { id: 'settings', icon: Settings, label: 'Settings' },
+];
+
 export const Header = ({ user, onNavigate, onRequestLogout, onRequestEndDay, endDayPending = false, trackingDayLabel }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const menuButtonRef = useRef(null);
+  const itemRefs = useRef([]);
 
   useEffect(() => {
     const clickOutside = (e) => {
@@ -14,6 +22,51 @@ export const Header = ({ user, onNavigate, onRequestLogout, onRequestEndDay, end
     document.addEventListener('mousedown', clickOutside);
     return () => document.removeEventListener('mousedown', clickOutside);
   }, []);
+
+  const closeMenu = useCallback(() => {
+    setIsOpen(false);
+    menuButtonRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const focusables = () => itemRefs.current.filter(Boolean);
+    requestAnimationFrame(() => focusables()[0]?.focus());
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeMenu();
+        return;
+      }
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Home' && e.key !== 'End') return;
+
+      const items = focusables();
+      if (!items.length) return;
+
+      const idx = items.indexOf(document.activeElement);
+      e.preventDefault();
+
+      if (e.key === 'Home') {
+        items[0]?.focus();
+      } else if (e.key === 'End') {
+        items[items.length - 1]?.focus();
+      } else if (e.key === 'ArrowDown') {
+        items[(idx + 1 + items.length) % items.length]?.focus();
+      } else if (e.key === 'ArrowUp') {
+        items[(idx - 1 + items.length) % items.length]?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
+  }, [isOpen, closeMenu]);
+
+  const navigateFromMenu = (tab) => {
+    onNavigate(tab);
+    closeMenu();
+  };
 
   return (
     <header className="sticky top-0 z-[200] w-full shrink-0 border-b border-white/[0.03] bg-[#09090B]/80 backdrop-blur-2xl pt-[env(safe-area-inset-top)]">
@@ -52,6 +105,7 @@ export const Header = ({ user, onNavigate, onRequestLogout, onRequestEndDay, end
 
           <div className="relative flex items-center" ref={dropdownRef}>
             <button
+              ref={menuButtonRef}
               type="button"
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Profile menu"
@@ -88,11 +142,23 @@ export const Header = ({ user, onNavigate, onRequestLogout, onRequestEndDay, end
                   style={{ boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 20px 100px rgba(0,0,0,0.95)' }}
                 >
                   <div className="space-y-1">
-                    <DropdownItem icon={Layout} label="Track" onClick={() => { onNavigate('track'); setIsOpen(false); }} />
-                    <DropdownItem icon={BarChart3} label="History" onClick={() => { onNavigate('history'); setIsOpen(false); }} />
-                    <DropdownItem icon={Settings} label="Settings" onClick={() => { onNavigate('control'); setIsOpen(false); }} />
+                    {MENU_ITEMS.map((item, i) => (
+                      <DropdownItem
+                        key={item.id}
+                        ref={(el) => { itemRefs.current[i] = el; }}
+                        icon={item.icon}
+                        label={item.label}
+                        onClick={() => navigateFromMenu(item.id)}
+                      />
+                    ))}
                     <div className="h-px bg-white/5 my-2.5 mx-2" role="separator" />
-                    <DropdownItem icon={LogOut} label="Sign out" onClick={() => { onRequestLogout(); setIsOpen(false); }} danger />
+                    <DropdownItem
+                      ref={(el) => { itemRefs.current[MENU_ITEMS.length] = el; }}
+                      icon={LogOut}
+                      label="Sign out"
+                      onClick={() => { onRequestLogout(); closeMenu(); }}
+                      danger
+                    />
                   </div>
                 </motion.div>
               )}
@@ -104,8 +170,9 @@ export const Header = ({ user, onNavigate, onRequestLogout, onRequestEndDay, end
   );
 };
 
-const DropdownItem = ({ icon: Icon, label, onClick, danger }) => (
+const DropdownItem = React.forwardRef(({ icon: Icon, label, onClick, danger }, ref) => (
   <button
+    ref={ref}
     type="button"
     role="menuitem"
     onClick={onClick}
@@ -117,4 +184,5 @@ const DropdownItem = ({ icon: Icon, label, onClick, danger }) => (
   >
     <Icon size={18} strokeWidth={2.5} aria-hidden="true" />{label}
   </button>
-);
+));
+DropdownItem.displayName = 'DropdownItem';

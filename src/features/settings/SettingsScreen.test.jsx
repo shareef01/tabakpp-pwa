@@ -20,23 +20,23 @@ describe('SettingsScreen', () => {
     onDel: vi.fn(),
   };
 
-  it('renders identity and open session badge', () => {
+  it('renders identity and logging today badge', () => {
     render(
       <MemoryRouter>
         <SettingsScreen {...baseProps} />
       </MemoryRouter>
     );
     expect(screen.getByText('Identity')).toBeDefined();
-    expect(screen.getByText('Open Session')).toBeDefined();
-    expect(screen.getByText('Protocols')).toBeDefined();
+    expect(screen.getByText('Logging today')).toBeDefined();
+    expect(screen.getByText('Trackers')).toBeDefined();
   });
 
-  it('shows session clear when counts are zero', () => {
+  it('shows no counts yet when counts are zero', () => {
     render(
       <MemoryRouter>
         <SettingsScreen {...baseProps} activeCounts={{ '1': 0 }} />
       </MemoryRouter>
     );
-    expect(screen.getByText('Session Clear')).toBeDefined();
+    expect(screen.getByText('No counts yet')).toBeDefined();
   });
 });

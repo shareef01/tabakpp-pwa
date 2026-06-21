@@ -9,7 +9,7 @@ const HEIGHT = {
 };
 
 export const DashboardSkeleton = React.memo(({ widgetSize }) => (
-  <div className="track-dashboard animate-pulse w-full">
+  <div className="track-dashboard animate-pulse w-full" role="status" aria-label="Loading dashboard">
     <div className={UI.TRACKER_GRID}>
       {[...Array(3)].map((_, i) => (
         <div

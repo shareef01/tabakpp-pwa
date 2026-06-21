@@ -15,7 +15,7 @@ describe('MetricBanner Component', () => {
     render(<MetricBanner m={mockMetrics} />);
     expect(screen.getByText('Remaining')).toBeDefined();
     expect(screen.getByText('Spent Today')).toBeDefined();
-    expect(screen.getByText('Control Streak')).toBeDefined();
+    expect(screen.getByText('Days within limit')).toBeDefined();
     expect(screen.getByText('Daily quota')).toBeDefined();
   });
 
@@ -31,15 +31,15 @@ describe('MetricBanner Component', () => {
     expect(screen.getByText(',50')).toBeDefined();
   });
 
-  it('shows control streak with day label', () => {
+  it('shows streak with day label', () => {
     render(<MetricBanner m={mockMetrics} />);
     expect(screen.getByText('1')).toBeDefined();
     expect(screen.getByText('DAY')).toBeDefined();
   });
 
-  it('shows over-limit sync progress', () => {
+  it('shows over-limit daily quota progress', () => {
     render(<MetricBanner m={{ ...mockMetrics, count: 25, progress: 1.25 }} />);
     expect(screen.getByText('0')).toBeDefined();
-    expect(screen.getByText(/125%/)).toBeDefined();
+    expect(screen.getByText(/125% over/)).toBeDefined();
   });
 });

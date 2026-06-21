@@ -92,16 +92,13 @@ export const ProtocolForm = ({ isOpen, onClose, onApply, title, initialData }) =
   return (
     <ModalFrame isOpen={isOpen} onClose={onClose}>
       {(titleId) => (
-        <div
-          className="bg-[#0a0a0c]/95 border border-white/[0.1] rounded-[40px] w-full max-w-[480px] p-6 md:p-10 shadow-2xl flex flex-col gap-6 mx-auto"
-          style={{ boxShadow: 'inset 0 1px 0 0 rgba(255,255,255,0.05), 0 20px 100px rgba(0,0,0,0.95)' }}
-        >
+        <div className={cn(UI.MODAL_SHELL, 'max-w-[480px] p-6 md:p-10 flex flex-col gap-6')}>
           <div className="flex justify-between items-center">
             <div className="space-y-1">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Protocol</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-500">Tracker</h3>
               <span id={titleId} className="text-2xl font-[900] tracking-tighter uppercase text-[#FAFAFA] leading-none">{title}</span>
             </div>
-            <button type="button" onClick={onClose} aria-label="Close" className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-neutral-500 hover:text-[#FAFAFA]"><X size={20} strokeWidth={3} /></button>
+            <button type="button" onClick={onClose} aria-label="Close" className="min-w-[44px] min-h-[44px] rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-neutral-500 hover:text-[#FAFAFA]"><X size={20} strokeWidth={3} /></button>
           </div>
 
           <div className="grid grid-cols-[1fr,110px] gap-4">
@@ -134,7 +131,7 @@ export const ProtocolForm = ({ isOpen, onClose, onApply, title, initialData }) =
 
           <div className="p-5 rounded-[32px] bg-white/[0.02] border border-white/5 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase text-neutral-500 tracking-[0.2em]">Economy</span>
+              <span className="text-[10px] font-black uppercase text-neutral-500 tracking-[0.2em]">Pricing</span>
               <div className="flex bg-black/60 p-1 rounded-xl border border-white/5">
                 <button type="button" onClick={() => setCalcMode(calcMode === 'PACK' ? null : 'PACK')} className={cn('px-4 py-1.5 rounded-lg text-[9px] font-black uppercase', calcMode === 'PACK' ? 'bg-accent text-zinc-950' : 'text-neutral-500')}>Pack</button>
                 <button type="button" onClick={() => setCalcMode(calcMode === 'ROLL' ? null : 'ROLL')} className={cn('px-4 py-1.5 rounded-lg text-[9px] font-black uppercase', calcMode === 'ROLL' ? 'bg-accent text-zinc-950' : 'text-neutral-500')}>Ryo</button>

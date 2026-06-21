@@ -36,12 +36,12 @@ const HistoryScreen = lazyWithRetry(() => import('./features/history/HistoryScre
 const SettingsScreen = lazyWithRetry(() => import('./features/settings/SettingsScreen').then(m => ({ default: m.SettingsScreen })));
 
 const LoadingView = () => (
-  <div className="h-[100dvh] w-full bg-[#09090B] flex flex-col items-center justify-center text-[#FAFAFA] font-inter overflow-hidden relative">
+  <div className="h-[100dvh] w-full bg-[#09090B] flex flex-col items-center justify-center text-[#FAFAFA] font-inter overflow-hidden relative" aria-busy="true" aria-label="Loading">
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-6 relative z-10">
       <div className="w-32 h-[1.5px] bg-white/[0.04] relative overflow-hidden rounded-full">
         <motion.div initial={{ left: '-100%' }} animate={{ left: '100%' }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }} className="absolute top-0 w-1/2 h-full bg-accent" />
       </div>
-      <span className="text-[9px] font-black tracking-[0.6em] uppercase text-white/10 animate-pulse">Synchronizing</span>
+      <span className="text-[9px] font-black tracking-[0.6em] uppercase text-zinc-500 animate-pulse">Loading…</span>
     </motion.div>
   </div>
 );
@@ -58,7 +58,7 @@ const EmptyDashboard = React.memo(({ onAdd }) => (
     <div className="w-24 h-24 rounded-[36px] bg-white/[0.02] border border-white/5 flex items-center justify-center text-white/10"><PlusCircle size={48} strokeWidth={1} /></div>
     <div className="space-y-2">
       <h2 className="text-lg font-bold text-white">Add your first tracker</h2>
-      <p className="text-sm text-zinc-500 leading-relaxed">Create a protocol for each product you want to log — cigarettes, RYO, pouches, and more.</p>
+      <p className="text-sm text-zinc-500 leading-relaxed">Create a tracker for each product you want to log — cigarettes, RYO, pouches, and more.</p>
     </div>
     <button type="button" onClick={onAdd} className="h-14 px-12 rounded-[24px] bg-accent text-zinc-950 font-black uppercase tracking-[0.2em] text-[11px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/50">Add tracker</button>
   </div>
@@ -73,7 +73,7 @@ class FeatureErrorBoundary extends React.Component {
       return (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-danger/5 border border-danger/10 rounded-[40px] m-4">
           <AlertCircle size={32} className="text-danger mb-4" aria-hidden="true" />
-          <p className="text-sm text-zinc-400 mb-6 max-w-xs">This section failed to load. Try reloading it.</p>
+          <p className="text-sm text-zinc-400 mb-6 max-w-xs">Something went wrong loading this section. Try reloading it.</p>
           <button type="button" onClick={() => this.setState((s) => ({ hasError: false, resetKey: s.resetKey + 1 }))} className="px-8 h-12 rounded-2xl bg-white text-black font-black uppercase text-[9px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/50">Reload</button>
         </div>
       );
@@ -88,8 +88,9 @@ class GlobalErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="h-[100dvh] w-full bg-[#09090B] flex items-center justify-center">
-          <button type="button" onClick={() => { this.setState({ hasError: false }); window.location.href = '/track'; }} className="px-10 h-14 rounded-full bg-white text-black font-black uppercase text-[10px]">Reset</button>
+        <div className="h-[100dvh] w-full bg-[#09090B] flex flex-col items-center justify-center gap-6 px-8 text-center">
+          <p className="text-sm text-zinc-400 max-w-xs">The app hit an unexpected error. You can reset and return to Track.</p>
+          <button type="button" onClick={() => { this.setState({ hasError: false }); window.location.href = '/track'; }} className="px-10 h-14 rounded-full bg-white text-black font-black uppercase text-[10px]">Reset app</button>
         </div>
       );
     }
@@ -150,11 +151,30 @@ const AppContent = () => {
   const [showLogout, setShowLogout] = useState(false);
   const [showEndDayConfirm, setShowEndDayConfirm] = useState(false);
   const [toast, setToast] = useState(null);
+  const [offline, setOffline] = useState(() => typeof navigator !== 'undefined' && !navigator.onLine);
   const [themeAccent, setThemeAccent] = useState(() => readStoredAccent(BRAND_ACCENT));
+
+  useEffect(() => {
+    const onOnline = () => setOffline(false);
+    const onOffline = () => setOffline(true);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
+
+  const showToast = useCallback((message, options = {}) => {
+    setToast(typeof message === 'string' ? { message, ...options } : message);
+  }, []);
 
   const navigateTab = useCallback((tab) => navigate(tabToPath(tab)), [navigate]);
 
-  const profileLoaded = Boolean(user && !loading);
+  const handleIncrement = useCallback((config) => {
+    increment(config.id);
+    showToast({ message: `+1 ${config.name}`, onUndo: () => decrement(config.id) });
+  }, [increment, decrement, showToast]);
 
   useEffect(() => {
     if (userProfile?.accent && user?.uid) {
@@ -168,6 +188,8 @@ const AppContent = () => {
       setThemeAccent(readStoredAccent(BRAND_ACCENT));
     }
   }, [user, authLoading]);
+
+  const profileLoaded = Boolean(user && !loading);
 
   const resolvedAccent = user
     ? (userProfile?.accent || (profileLoaded ? readStoredAccent(BRAND_ACCENT, user.uid) : BRAND_ACCENT))
@@ -213,23 +235,27 @@ const AppContent = () => {
       }
       await RegistryService.updateUserProfile(user.uid, upd);
       setSettingsError(null);
-      setToast('Settings saved');
+      showToast('Settings saved');
     } catch (e) {
-      setSettingsError(e?.message || 'Settings update failed');
+      const msg = e?.message || 'Settings update failed';
+      setSettingsError(msg);
+      showToast({ message: msg, variant: 'error' });
       throw e;
     }
-  }, [user]);
+  }, [user, showToast]);
 
   const handleEndDay = useCallback(async () => {
     try {
       await endDay();
       setShowEndDayConfirm(false);
-      setToast('Day archived — counters reset');
+      showToast('Day archived — counters reset');
     } catch (e) {
-      setSettingsError(e?.message || 'Failed to end day');
+      const msg = e?.message || 'Failed to end day';
+      setSettingsError(msg);
+      showToast({ message: msg, variant: 'error' });
       setShowEndDayConfirm(false);
     }
-  }, [endDay]);
+  }, [endDay, showToast]);
 
   const handleLogout = useCallback(() => {
     if (user?.uid) persistAccentColor(resolvedAccent, user.uid);
@@ -270,13 +296,13 @@ const AppContent = () => {
 
   const trackView = (
     <motion.div key="track" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full flex flex-col items-center">
-      <FeatureErrorBoundary name="Trackers">
+      <FeatureErrorBoundary name="Track">
         <div className={UI.TRACK_DASHBOARD}>
           {loading ? <DashboardSkeleton widgetSize={currentSettings.widgetSize} /> : (
             configs.length === 0 ? <EmptyDashboard onAdd={() => setShowAdd(true)} /> : (
               <div className={UI.TRACKER_GRID}>
                 {[...configs].sort((a, b) => (a.order || 0) - (b.order || 0)).map((c, i) => (
-                  <TrackerCard key={c.id} index={i} config={c} count={activeCounts[c.id] || 0} onInc={() => increment(c.id)} onDec={() => decrement(c.id)} globalSize={currentSettings.widgetSize} />
+                  <TrackerCard key={c.id} index={i} config={c} count={activeCounts[c.id] || 0} onInc={() => handleIncrement(c)} onDec={() => decrement(c.id)} globalSize={currentSettings.widgetSize} />
                 ))}
               </div>
             )
@@ -289,15 +315,15 @@ const AppContent = () => {
 
   const historyView = (
     <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full">
-      <FeatureErrorBoundary name="Analytics">
+      <FeatureErrorBoundary name="History">
         <HistoryScreen loading={loading} logs={logs} configs={configs} m={metrics} onEdit={setEditTarget} onDeleteLog={deleteLog} today={trackingDay} onManualEntry={createManualEntry} onError={setSettingsError} onAddProtocol={() => setShowAdd(true)} />
       </FeatureErrorBoundary>
     </motion.div>
   );
 
   const settingsView = (
-    <motion.div key="control" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full">
-      <FeatureErrorBoundary name="Calibration">
+    <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full">
+      <FeatureErrorBoundary name="Settings">
         <SettingsScreen
           configs={configs}
           user={{ ...user, displayName: currentSettings.name, photoURL: currentSettings.avatar }}
@@ -339,7 +365,15 @@ const AppContent = () => {
           </div>
         </div>
       )}
+      {offline && (
+        <div className="shrink-0 mx-auto w-full max-w-[1400px] px-4 pt-2">
+          <div className="rounded-2xl border border-zinc-500/30 bg-zinc-500/10 px-4 py-3 text-sm text-zinc-300" role="status">
+            You&apos;re offline. Counts will sync when connection returns.
+          </div>
+        </div>
+      )}
       <>
+          <a href="#main-content" className="skip-link">Skip to main content</a>
           <Header
             user={{ ...user, displayName: currentSettings.name, photoURL: currentSettings.avatar }}
             onNavigate={navigateTab}
@@ -348,7 +382,7 @@ const AppContent = () => {
             endDayPending={endingDay}
             trackingDayLabel={formatDateDisplay(trackingDay)}
           />
-          <main className="app-scroll-main flex-1 min-h-0 w-full pt-2">
+          <main id="main-content" aria-label="Main content" className="app-scroll-main flex-1 min-h-0 w-full pt-2">
             <div className={UI.MAX_CONTAINER}>
               <Suspense fallback={tabFallback}>
                 <Routes location={location}>
@@ -362,9 +396,9 @@ const AppContent = () => {
             </div>
           </main>
           <BottomNav activeTab={activeTab} onNavigate={navigate} />
-          <ProtocolForm isOpen={showAdd} onClose={() => setShowAdd(false)} onApply={async (d) => { await addProtocol(d); setShowAdd(false); }} title="Create" />
+          <ProtocolForm isOpen={showAdd} onClose={() => setShowAdd(false)} onApply={async (d) => { await addProtocol(d); setShowAdd(false); }} title="New tracker" />
           {editProtocol && (
-            <ProtocolForm isOpen={!!editProtocol} onClose={() => setEditProtocol(null)} onApply={async (d) => { await updateProtocol(editProtocol.id, d); setEditProtocol(null); }} title="Edit" initialData={editProtocol} />
+            <ProtocolForm isOpen={!!editProtocol} onClose={() => setEditProtocol(null)} onApply={async (d) => { await updateProtocol(editProtocol.id, d); setEditProtocol(null); }} title="Edit tracker" initialData={editProtocol} />
           )}
           <EditLogOverlay isOpen={!!editTarget} log={editTarget} configs={configs} onClose={() => setEditTarget(null)} user={user} unitPrice={currentSettings.unitPrice} onError={setSettingsError} />
           <ConfirmModal
@@ -377,7 +411,7 @@ const AppContent = () => {
             confirmDisabled={endingDay}
           />
           <LogoutModal isOpen={showLogout} onClose={() => setShowLogout(false)} onConfirm={handleLogout} />
-          <Toast message={toast} onDismiss={() => setToast(null)} />
+          <Toast toast={toast} onDismiss={() => setToast(null)} />
       </>
     </div>
   );

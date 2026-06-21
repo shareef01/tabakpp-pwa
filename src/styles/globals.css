@@ -35,6 +35,32 @@
   .tracker-label {
     font-size: var(--tracker-label-fs, 0.5625rem);
   }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    background: #121214;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .skip-link:focus {
+    position: fixed;
+    left: 1rem;
+    top: max(1rem, env(safe-area-inset-top));
+    width: auto;
+    height: auto;
+    overflow: visible;
+  }
 }
 
 .custom-scrollbar::-webkit-scrollbar {

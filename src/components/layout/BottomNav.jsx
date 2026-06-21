@@ -7,7 +7,7 @@ import { ROUTES } from '../../constants/routes';
 const TABS = [
   { id: 'track', path: ROUTES.TRACK, label: 'Track', icon: LayoutDashboard },
   { id: 'history', path: ROUTES.HISTORY, label: 'History', icon: ChartColumn },
-  { id: 'control', path: ROUTES.SETTINGS, label: 'Settings', icon: Settings2 },
+  { id: 'settings', path: ROUTES.SETTINGS, label: 'Settings', icon: Settings2 },
 ];
 
 const NavItem = React.memo(({ icon: Icon, label, active, onClick }) => (
