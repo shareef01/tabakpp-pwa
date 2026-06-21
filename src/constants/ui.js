@@ -75,7 +75,8 @@ export const UI = {
 
   BUTTON_BASE: 'min-h-[50px] px-8 rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center transition-all active:scale-95 disabled:opacity-30',
 
-  MODAL_OVERLAY: 'fixed inset-0 z-[5000] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 isolate pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]',
+  /* Backdrop dimming/blur is owned by the animated layer inside ModalFrame */
+  MODAL_OVERLAY: 'fixed inset-0 z-[5000] flex items-center justify-center p-4 isolate pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]',
 
   /** Shared modal panel — radius/padding aligned across overlays */
   MODAL_SHELL: 'bg-[#121214]/95 border border-white/[0.1] rounded-[32px] w-full shadow-2xl overflow-hidden mx-auto',

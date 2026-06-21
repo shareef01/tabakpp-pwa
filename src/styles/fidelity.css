@@ -7,8 +7,9 @@
   --font-main: 'Inter', system-ui, -apple-system, sans-serif;
   --text-primary: #FAFAFA; /* Softened from #FFF to prevent bloom */
   --text-muted: #71717A;
-  --accent-led: rgba(255, 95, 95, 0.4);
-  --accent-glow: rgba(255, 95, 95, 0.2);
+  /* Derived from the live accent so glows follow a user's custom color */
+  --accent-led: rgba(var(--accent-rgb, 255, 95, 95), 0.4);
+  --accent-glow: rgba(var(--accent-rgb, 255, 95, 95), 0.2);
 }
 
 body {

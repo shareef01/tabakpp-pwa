@@ -15,7 +15,6 @@ export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index,
   const limit = config?.limit ?? 1;
   const isLimitReached = count >= limit;
   const icons = ICON[globalSize] || ICON.MEDIUM;
-  const trackerName = config?.name || 'Unnamed tracker';
   const displayName = config?.name || 'Unnamed tracker';
 
   const gaugeProps = { count, limit, size: globalSize };
@@ -81,7 +80,7 @@ export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index,
         <button
           type="button"
           onClick={onDec}
-          aria-label={`Decrease ${trackerName}`}
+          aria-label={`Decrease ${displayName}`}
           className={cn(
             'tracker-btn flex-1 rounded-xl flex items-center justify-center transition-all duration-150',
             'bg-white/[0.04] border border-white/[0.08] text-zinc-400',
@@ -94,12 +93,12 @@ export const TrackerCard = React.memo(({ config, count = 0, onInc, onDec, index,
         <button
           type="button"
           onClick={onInc}
-          aria-label={`Increase ${trackerName}`}
+          aria-label={`Increase ${displayName}`}
           className={cn(
             'tracker-btn flex-1 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-[0.97]',
             isLimitReached
               ? 'bg-rose-500 text-white shadow-[0_8px_24px_rgba(244,63,94,0.35)] hover:brightness-110'
-              : 'bg-accent text-zinc-950 shadow-[0_8px_24px_rgba(255,95,95,0.25)] hover:brightness-110'
+              : 'bg-accent text-zinc-950 shadow-[0_8px_24px_rgba(var(--accent-rgb),0.25)] hover:brightness-110'
           )}
         >
           <Plus size={icons.plus} strokeWidth={2.5} />

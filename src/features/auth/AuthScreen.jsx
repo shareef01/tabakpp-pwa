@@ -177,7 +177,13 @@ export const AuthScreen = React.memo(() => {
               </>
             )}
 
-            <form id="auth-panel" role="tabpanel" aria-labelledby={mode === 'REGISTER' ? 'auth-tab-register' : 'auth-tab-login'} className="flex flex-col gap-4 sm:gap-5" onSubmit={handle}>
+            <form
+              id="auth-panel"
+              role={mode === 'RESET' ? undefined : 'tabpanel'}
+              aria-labelledby={mode === 'RESET' ? undefined : (mode === 'REGISTER' ? 'auth-tab-register' : 'auth-tab-login')}
+              className="flex flex-col gap-4 sm:gap-5"
+              onSubmit={handle}
+            >
               <AnimatePresence mode="wait">
                 {msg.c && (
                   <motion.div
