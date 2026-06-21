@@ -21,7 +21,7 @@ export const MetricInfoModal = ({ isOpen, onClose, type }) => {
     health: {
       icon: Activity,
       title: 'Time recovered',
-      desc: 'Estimated minutes of life recovered from staying under smoking limits.',
+      desc: 'Estimated minutes recovered from staying under your daily limits.',
       color: 'text-rose-400',
     },
   };

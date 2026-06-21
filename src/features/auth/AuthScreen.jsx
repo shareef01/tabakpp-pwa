@@ -61,7 +61,7 @@ export const AuthScreen = React.memo(() => {
 
     const err = validate();
     if (err) {
-      setMsg({ t: 'FAULT', c: err });
+      setMsg({ t: 'error', c: err });
       return;
     }
 
@@ -77,10 +77,10 @@ export const AuthScreen = React.memo(() => {
         await ensureUserDocument(c.user);
       } else {
         await sendPasswordResetEmail(auth, e.trim());
-        setMsg({ t: 'SUCCESS', c: 'Check your inbox for a reset link.' });
+        setMsg({ t: 'success', c: 'Check your inbox for a reset link.' });
       }
     } catch (err) {
-      setMsg({ t: 'FAULT', c: friendlyAuthError(err?.code) });
+      setMsg({ t: 'error', c: friendlyAuthError(err?.code) });
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ export const AuthScreen = React.memo(() => {
       if (result.redirected) return;
     } catch (err) {
       if (err?.code !== 'auth/popup-closed-by-user') {
-        setMsg({ t: 'FAULT', c: friendlyAuthError(err?.code) });
+        setMsg({ t: 'error', c: friendlyAuthError(err?.code) });
       }
     } finally {
       setGoogleLoading(false);
@@ -148,6 +148,8 @@ export const AuthScreen = React.memo(() => {
                 <button
                   type="button"
                   role="tab"
+                  id="auth-tab-login"
+                  aria-controls="auth-panel"
                   aria-selected={mode === 'LOGIN'}
                   onClick={() => switchMode('LOGIN')}
                   className={cn(
@@ -160,6 +162,8 @@ export const AuthScreen = React.memo(() => {
                 <button
                   type="button"
                   role="tab"
+                  id="auth-tab-register"
+                  aria-controls="auth-panel"
                   aria-selected={mode === 'REGISTER'}
                   onClick={() => switchMode('REGISTER')}
                   className={cn(
@@ -173,7 +177,7 @@ export const AuthScreen = React.memo(() => {
               </>
             )}
 
-            <form className="flex flex-col gap-4 sm:gap-5" onSubmit={handle}>
+            <form id="auth-panel" role="tabpanel" aria-labelledby={mode === 'REGISTER' ? 'auth-tab-register' : 'auth-tab-login'} className="flex flex-col gap-4 sm:gap-5" onSubmit={handle}>
               <AnimatePresence mode="wait">
                 {msg.c && (
                   <motion.div
@@ -184,7 +188,7 @@ export const AuthScreen = React.memo(() => {
                     role="alert"
                     className={cn(
                       'rounded-[14px] px-4 py-3 text-sm font-medium border leading-snug',
-                      msg.t === 'FAULT'
+                      msg.t === 'error'
                         ? 'bg-rose-500/10 text-rose-300 border-rose-500/20'
                         : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                     )}

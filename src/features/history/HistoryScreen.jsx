@@ -20,7 +20,7 @@ const InsightCard = React.memo(({ icon: Icon, label, val, sub, color, onInfo }) 
   </div>
 ));
 
-export const HistoryScreen = React.memo(({ loading = false, logs = [], configs = [], m = {}, onEdit, onDeleteLog, today, onManualEntry, onError, onAddProtocol }) => {
+export const HistoryScreen = React.memo(({ loading = false, logs = [], configs = [], m = {}, onEdit, onDeleteLog, today, onManualEntry, onError, onAddTracker }) => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [infoType, setInfoType] = useState(null);
   const [newEntryDate, setNewEntryDate] = useState(today || new Date().toISOString().split('T')[0]);
@@ -90,6 +90,15 @@ export const HistoryScreen = React.memo(({ loading = false, logs = [], configs =
          </div>
 
          <p className="sr-only" data-selectable>{chartSummary}</p>
+         <table className="sr-only">
+           <caption>Daily usage trend</caption>
+           <thead><tr><th scope="col">Day</th><th scope="col">Units</th></tr></thead>
+           <tbody>
+             {chartData.map((row) => (
+               <tr key={row.name}><td>{row.name}</td><td>{row.val}</td></tr>
+             ))}
+           </tbody>
+         </table>
          <div className="w-full relative z-10 h-[220px] md:h-[280px]" aria-hidden="true">
            <ResponsiveContainer width="100%" height="100%">
              <LineChart data={chartData}>
@@ -164,8 +173,8 @@ export const HistoryScreen = React.memo(({ loading = false, logs = [], configs =
              }) : (
                <div className="py-16 px-6 text-center border-2 border-dashed border-white/10 rounded-[32px] space-y-4">
                  <p className="text-sm text-zinc-500">No history yet — log from Track or add a past entry above.</p>
-                 {onAddProtocol && (
-                   <button type="button" onClick={onAddProtocol} className="text-xs font-bold uppercase tracking-widest text-accent hover:brightness-110">Add your first tracker</button>
+                 {onAddTracker && (
+                   <button type="button" onClick={onAddTracker} className="text-xs font-bold uppercase tracking-widest text-accent hover:brightness-110">Add your first tracker</button>
                  )}
                </div>
              )}
@@ -178,7 +187,7 @@ export const HistoryScreen = React.memo(({ loading = false, logs = [], configs =
 
        <AnimatePresence>
          {showManualInit && (
-           <ManualEntryOverlay isOpen={showManualInit} date={newEntryDate} configs={configs || []} onClose={() => setShowManualInit(false)} onApply={onManualEntry} onAddTracker={onAddProtocol} />
+           <ManualEntryOverlay isOpen={showManualInit} date={newEntryDate} configs={configs || []} onClose={() => setShowManualInit(false)} onApply={onManualEntry} onAddTracker={onAddTracker} />
          )}
        </AnimatePresence>
     </motion.div>

@@ -152,7 +152,7 @@ export const ProtocolForm = ({ isOpen, onClose, onApply, title, initialData }) =
             </div>
           </div>
 
-          <Button onClick={handleSubmit} disabled={saving} className="w-full h-16 text-[11px] font-black uppercase tracking-[0.4em]">{saving ? 'Saving…' : 'Save protocol'}</Button>
+          <Button onClick={handleSubmit} disabled={saving} className="w-full h-16 text-[11px] font-black uppercase tracking-[0.4em]">{saving ? 'Saving…' : 'Save tracker'}</Button>
         </div>
       )}
     </ModalFrame>

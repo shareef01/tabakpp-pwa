@@ -34,9 +34,29 @@ service cloud.firestore {
         );
     }
 
+    function validAvatarField(data) {
+      let avatar = data.get('avatar', null);
+      return avatar == null || (avatar is string && avatar.size() <= 500000);
+    }
+
+    function validConfigData(data) {
+      return data.name is string
+        && data.name.size() >= 1
+        && data.name.size() <= 80
+        && data.order is number
+        && data.limit is number
+        && data.limit >= 1
+        && data.limit <= 1000
+        && data.get('pricePerUnit', 0) is number
+        && data.get('pricePerUnit', 0) >= 0
+        && data.get('pricePerUnit', 0) <= 100
+        && data.size() <= 30;
+    }
+
     function validUserWrite() {
       return validActiveCounts(request.resource.data.get('activeCounts', null))
-        && validLifetimeAggregates(request.resource.data.get('lifetimeAggregates', null));
+        && validLifetimeAggregates(request.resource.data.get('lifetimeAggregates', null))
+        && validAvatarField(request.resource.data);
     }
 
     function validUserUpdate() {
@@ -75,12 +95,7 @@ service cloud.firestore {
 
       match /configs/{configId} {
         allow read: if isOwner(userId);
-        allow create, update: if isOwner(userId)
-          && request.resource.data.name is string
-          && request.resource.data.name.size() >= 1
-          && request.resource.data.name.size() <= 80
-          && request.resource.data.order is number
-          && request.resource.data.size() <= 30;
+        allow create, update: if isOwner(userId) && validConfigData(request.resource.data);
         allow delete: if isOwner(userId);
       }
     }

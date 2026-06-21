@@ -10,9 +10,9 @@ A privacy-focused **Progressive Web App** for tracking tobacco and nicotine habi
 
 Most habit trackers feel like chores: too many taps, generic counters, no sense of progress. **TABAK++** (T++) is built around **tracking friction**—the gap between wanting to log and actually logging.
 
-The app treats each product you track (cigarettes, roll-your-own, pouches, etc.) as a **registry node** with its own daily limit and a dedicated gauge. One tap increments; limits turn the UI amber/red so you feel urgency before you blow past your goal. A **tracking day** can start at a custom hour (e.g. 4 AM) so “today” matches your rhythm, not midnight.
+The app treats each product you track (cigarettes, roll-your-own, pouches, etc.) as a **tracker** with its own daily limit and a dedicated gauge. One tap increments; limits turn the UI amber/red so you feel urgency before you blow past your goal. A **tracking day** can start at a custom hour (e.g. 4 AM) so “today” matches your rhythm, not midnight.
 
-History turns raw logs into **velocity charts** and streak-style metrics (health, savings, XP-style progress). Settings hold your identity, accent color, protocols, and day-start—all synced across devices via Firebase.
+History turns raw logs into **usage charts** and streak-style metrics (days within limit, savings, time recovered). Settings hold your identity, accent color, trackers, and day-start—all synced across devices via Firebase.
 
 ---
 
@@ -37,7 +37,7 @@ Captured from the running app (`npm run dev` + `npm run screenshots`).
 - **Tracking day boundary** — Configurable day-start hour with live rollover.
 - **Metrics banner** — Streak, savings, and health-style derived stats from your log stream.
 - **Real-time sync** — Firestore listeners keep all signed-in devices in step.
-- **Personalization** — Per-user accent color, avatar (Firestore-backed), and protocol templates.
+- **Personalization** — Per-user accent color, avatar (Firestore-backed), and tracker templates.
 - **PWA** — Installable on iOS/Android; standalone display without browser chrome.
 - **Security** — Firebase App Check (reCAPTCHA v3), hardened Firestore rules, security headers on hosting.
 

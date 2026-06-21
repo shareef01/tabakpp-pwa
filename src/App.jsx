@@ -17,12 +17,13 @@ import { useRegistry } from './hooks/useRegistry';
 
 import { Header } from './components/layout/Header';
 import { BottomNav } from './components/layout/BottomNav';
-import { LogoutModal } from './features/shared/LogoutModal';
 import { ConfirmModal } from './features/shared/ConfirmModal';
 import { Toast } from './features/shared/Toast';
 import { DashboardSkeleton } from './features/dashboard/components/DashboardSkeleton';
-import { ProtocolForm } from './features/shared/ProtocolForm';
-import { EditLogOverlay } from './features/history/components/EditLogOverlay';
+
+const ProtocolForm = lazyWithRetry(() => import('./features/shared/ProtocolForm').then(m => ({ default: m.ProtocolForm })));
+const EditLogOverlay = lazyWithRetry(() => import('./features/history/components/EditLogOverlay').then(m => ({ default: m.EditLogOverlay })));
+const LogoutModal = lazyWithRetry(() => import('./features/shared/LogoutModal').then(m => ({ default: m.LogoutModal })));
 
 const lazyWithRetry = (componentImport) => lazy(async () => {
   try { return await componentImport(); }
@@ -316,7 +317,7 @@ const AppContent = () => {
   const historyView = (
     <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full">
       <FeatureErrorBoundary name="History">
-        <HistoryScreen loading={loading} logs={logs} configs={configs} m={metrics} onEdit={setEditTarget} onDeleteLog={deleteLog} today={trackingDay} onManualEntry={createManualEntry} onError={setSettingsError} onAddProtocol={() => setShowAdd(true)} />
+        <HistoryScreen loading={loading} logs={logs} configs={configs} m={metrics} onEdit={setEditTarget} onDeleteLog={deleteLog} today={trackingDay} onManualEntry={createManualEntry} onError={setSettingsError} onAddTracker={() => setShowAdd(true)} />
       </FeatureErrorBoundary>
     </motion.div>
   );
@@ -396,11 +397,14 @@ const AppContent = () => {
             </div>
           </main>
           <BottomNav activeTab={activeTab} onNavigate={navigate} />
-          <ProtocolForm isOpen={showAdd} onClose={() => setShowAdd(false)} onApply={async (d) => { await addProtocol(d); setShowAdd(false); }} title="New tracker" />
-          {editProtocol && (
-            <ProtocolForm isOpen={!!editProtocol} onClose={() => setEditProtocol(null)} onApply={async (d) => { await updateProtocol(editProtocol.id, d); setEditProtocol(null); }} title="Edit tracker" initialData={editProtocol} />
-          )}
-          <EditLogOverlay isOpen={!!editTarget} log={editTarget} configs={configs} onClose={() => setEditTarget(null)} user={user} unitPrice={currentSettings.unitPrice} onError={setSettingsError} />
+          <Suspense fallback={null}>
+            <ProtocolForm isOpen={showAdd} onClose={() => setShowAdd(false)} onApply={async (d) => { await addProtocol(d); setShowAdd(false); }} title="New tracker" />
+            {editProtocol && (
+              <ProtocolForm isOpen={!!editProtocol} onClose={() => setEditProtocol(null)} onApply={async (d) => { await updateProtocol(editProtocol.id, d); setEditProtocol(null); }} title="Edit tracker" initialData={editProtocol} />
+            )}
+            <EditLogOverlay isOpen={!!editTarget} log={editTarget} configs={configs} onClose={() => setEditTarget(null)} user={user} unitPrice={currentSettings.unitPrice} onError={setSettingsError} />
+            <LogoutModal isOpen={showLogout} onClose={() => setShowLogout(false)} onConfirm={handleLogout} />
+          </Suspense>
           <ConfirmModal
             isOpen={showEndDayConfirm}
             onClose={() => setShowEndDayConfirm(false)}
@@ -410,7 +414,6 @@ const AppContent = () => {
             confirmText={endingDay ? 'Archiving…' : 'End day'}
             confirmDisabled={endingDay}
           />
-          <LogoutModal isOpen={showLogout} onClose={() => setShowLogout(false)} onConfirm={handleLogout} />
           <Toast toast={toast} onDismiss={() => setToast(null)} />
       </>
     </div>

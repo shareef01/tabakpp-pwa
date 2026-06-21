@@ -64,6 +64,8 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.local
+.env.*.local
 
 # Vite build output
 dist/
@@ -73,6 +75,7 @@ dist/
 
 # Local browser caches (optional screenshot tooling)
 .browsers/
+.puppeteer-cache/
 
 # dataconnect generated files
 .dataconnect
