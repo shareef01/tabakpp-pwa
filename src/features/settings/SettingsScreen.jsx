@@ -116,16 +116,16 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
   }, [configs]);
 
   const ACCENT_OPTIONS = [
-    { name: 'Salmon Core', hex: '#FF5F5F' },
-    { name: 'Neon Cyber', hex: '#00D1FF' },
+    { name: 'Coral', hex: '#FF5F5F' },
+    { name: 'Amber', hex: '#F59E0B' },
     { name: 'Volt Lime', hex: '#D4FF32' },
+    { name: 'Emerald', hex: '#10B981' },
+    { name: 'Teal', hex: '#14B8A6' },
+    { name: 'Cyber Cyan', hex: '#00D1FF' },
+    { name: 'Azure', hex: '#3B82F6' },
+    { name: 'Royal Violet', hex: '#8B5CF6' },
+    { name: 'Magenta', hex: '#EC4899' },
     { name: 'Soft Silver', hex: '#E4E4E7' },
-    { name: 'Rose Metal', hex: '#FF4B4B' },
-    { name: 'Royal Resin', hex: '#8B5CF6' },
-    { name: 'Deep Sage', hex: '#10B981' },
-    { name: 'Amber Glow', hex: '#F59E0B' },
-    { name: 'Steel Blue', hex: '#6366F1' },
-    { name: 'Raw Slate', hex: '#94A3B8' },
   ];
 
   const formatHourLabel = (hour) => {
@@ -334,19 +334,27 @@ export const SettingsScreen = React.memo(({ configs = [], user, settings = {}, a
             <div className="flex flex-col gap-2.5">
               <FieldLabel>Accent color</FieldLabel>
               <div className="flex flex-wrap gap-2 sm:gap-2.5">
-                {ACCENT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.hex}
-                    type="button"
-                    onClick={() => saveSettings({ accent: opt.hex }).catch(() => {})}
-                    className={cn(
-                      'w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 transition-all duration-300',
-                      settings?.accent === opt.hex ? 'border-white scale-110 shadow-lg shadow-white/10' : 'border-transparent opacity-40 hover:opacity-100'
-                    )}
-                    style={{ backgroundColor: opt.hex }}
-                    aria-label={opt.name}
-                  />
-                ))}
+                {ACCENT_OPTIONS.map((opt) => {
+                  const selected = settings?.accent === opt.hex;
+                  return (
+                    <button
+                      key={opt.hex}
+                      type="button"
+                      onClick={() => saveSettings({ accent: opt.hex }).catch(() => {})}
+                      aria-label={opt.name}
+                      aria-pressed={selected}
+                      title={opt.name}
+                      className={cn(
+                        'w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all duration-300 shadow-[inset_0_1px_2px_rgba(255,255,255,0.35),inset_0_-2px_4px_rgba(0,0,0,0.25)]',
+                        'ring-offset-2 ring-offset-[#121214] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70',
+                        selected
+                          ? 'scale-110 ring-2 ring-white'
+                          : 'ring-1 ring-white/15 hover:scale-105 hover:ring-white/40'
+                      )}
+                      style={{ backgroundColor: opt.hex }}
+                    />
+                  );
+                })}
               </div>
             </div>
 
