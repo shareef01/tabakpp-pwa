@@ -208,6 +208,19 @@ export const useRegistry = (user, trackingDay, dayStartHourOverride) => {
     }
   }, [user?.uid, configs, userProfile?.unitPrice]);
 
+  const restoreLog = useCallback(async (log) => {
+    if (!user || !log?.id) return;
+    try {
+      await RegistryService.restoreLog(user.uid, log, {
+        configs,
+        unitPrice: userProfile?.unitPrice ?? 0.5,
+      });
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [user?.uid, configs, userProfile?.unitPrice]);
+
   const addProtocol = useCallback(async (d) => {
     if (!user) throw new Error('UNAUTHORIZED');
     try {
@@ -268,6 +281,7 @@ export const useRegistry = (user, trackingDay, dayStartHourOverride) => {
     endDay,
     createManualEntry,
     deleteLog,
+    restoreLog,
     addProtocol,
     updateProtocol,
     deleteProtocol,

@@ -21,8 +21,8 @@ const EmberTip = ({ wide = false }) => (
 const FilterTip = ({ widthPct, variant = 'cigarette', className, style }) => {
   const variants = {
     cigarette: {
-      background: 'linear-gradient(180deg, #ffc878 0%, #f09040 28%, #e06828 58%, #c44e18 100%)',
-      boxShadow: 'inset 5px 0 14px rgba(0,0,0,0.22), inset -1px 0 8px rgba(255,210,140,0.2)',
+      background: 'linear-gradient(180deg, #dcb888 0%, #c89e6c 40%, #ac8551 72%, #8a6236 100%)',
+      boxShadow: 'inset 4px 0 12px rgba(0,0,0,0.2), inset -1px 0 6px rgba(255,234,205,0.18)',
     },
     ryo: {
       background: 'linear-gradient(180deg, #fafafa 0%, #e8e8e8 50%, #d4d4d4 100%)',
@@ -42,14 +42,14 @@ const FilterTip = ({ widthPct, variant = 'cigarette', className, style }) => {
       style={{ width: `${widthPct}%`, ...v, ...style }}
     >
       <div
-        className="absolute inset-0 opacity-[0.18] pointer-events-none"
+        className="absolute inset-0 opacity-[0.08] pointer-events-none"
         style={{
           backgroundImage:
             'repeating-linear-gradient(90deg, transparent 0, transparent 2px, rgba(0,0,0,0.35) 2px, rgba(0,0,0,0.35) 3px)',
         }}
       />
       <div
-        className="absolute inset-0 opacity-[0.12] pointer-events-none mix-blend-multiply"
+        className="absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-multiply"
         style={{
           backgroundImage:
             'radial-gradient(circle at 20% 35%, rgba(90,30,0,0.5) 0.5px, transparent 0.6px), radial-gradient(circle at 65% 70%, rgba(90,30,0,0.4) 0.5px, transparent 0.6px)',

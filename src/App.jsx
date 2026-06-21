@@ -115,7 +115,7 @@ const AppContent = () => {
     configs = [], logs = [], metrics = {}, userProfile = {}, activeCounts = {}, loading = false, error = null,
     dayStartHour = DEFAULT_DAY_START_HOUR,
     endingDay = false, logsTruncated = false,
-    increment, decrement, reorder, addProtocol, updateProtocol, deleteProtocol, endDay, createManualEntry, deleteLog, clearError,
+    increment, decrement, reorder, addProtocol, updateProtocol, deleteProtocol, endDay, createManualEntry, deleteLog, restoreLog, clearError,
   } = registry || {};
 
   const effectiveDayStartHour = previewDayStartHour ?? dayStartHour;
@@ -245,6 +245,19 @@ const AppContent = () => {
     }
   }, [user, showToast]);
 
+  const handleDeleteLog = useCallback(async (log) => {
+    if (!log?.id) return;
+    try {
+      await deleteLog(log.id);
+      showToast({
+        message: `Deleted ${formatDateDisplay(log.logDate)}`,
+        onUndo: () => { restoreLog(log).catch(() => {}); },
+      });
+    } catch (e) {
+      showToast({ message: e?.message || 'Failed to delete entry', variant: 'error' });
+    }
+  }, [deleteLog, restoreLog, showToast]);
+
   const handleEndDay = useCallback(async () => {
     try {
       await endDay();
@@ -317,7 +330,7 @@ const AppContent = () => {
   const historyView = (
     <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full">
       <FeatureErrorBoundary name="History">
-        <HistoryScreen loading={loading} logs={logs} configs={configs} m={metrics} onEdit={setEditTarget} onDeleteLog={deleteLog} today={trackingDay} onManualEntry={createManualEntry} onError={setSettingsError} onAddTracker={() => setShowAdd(true)} />
+        <HistoryScreen loading={loading} logs={logs} configs={configs} m={metrics} onEdit={setEditTarget} onDeleteLog={handleDeleteLog} today={trackingDay} onManualEntry={createManualEntry} onError={setSettingsError} onAddTracker={() => setShowAdd(true)} />
       </FeatureErrorBoundary>
     </motion.div>
   );

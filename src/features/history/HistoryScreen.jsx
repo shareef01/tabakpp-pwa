@@ -5,7 +5,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { UI } from '../../constants/ui';
 import { cn } from '../../utils/system';
 import { formatDateDisplay, formatCurrency, aggregateDailyChartTotals } from '../../utils/logic';
-import { ConfirmModal } from '../shared/ConfirmModal';
 import { MetricInfoModal } from './components/MetricInfoModal';
 import { ManualEntryOverlay } from './components/ManualEntryOverlay';
 import { HistorySkeleton } from './components/HistorySkeleton';
@@ -20,22 +19,10 @@ const InsightCard = React.memo(({ icon: Icon, label, val, sub, color, onInfo }) 
   </div>
 ));
 
-export const HistoryScreen = React.memo(({ loading = false, logs = [], configs = [], m = {}, onEdit, onDeleteLog, today, onManualEntry, onError, onAddTracker }) => {
-  const [deleteTarget, setDeleteTarget] = useState(null);
+export const HistoryScreen = React.memo(({ loading = false, logs = [], configs = [], m = {}, onEdit, onDeleteLog, today, onManualEntry, onAddTracker }) => {
   const [infoType, setInfoType] = useState(null);
   const [newEntryDate, setNewEntryDate] = useState(today || new Date().toISOString().split('T')[0]);
   const [showManualInit, setShowManualInit] = useState(false);
-
-  const handlePurge = async () => {
-    if (!deleteTarget || !onDeleteLog) return;
-    try {
-      await onDeleteLog(deleteTarget);
-      setDeleteTarget(null);
-    } catch (e) {
-      onError?.(e.message || 'Failed to delete log');
-      setDeleteTarget(null);
-    }
-  };
 
   const parseCommitTime = (log) => {
     if (log.finalizedAt?.toDate) {
@@ -57,7 +44,7 @@ export const HistoryScreen = React.memo(({ loading = false, logs = [], configs =
       return aggregateDailyChartTotals(logs)
         .slice(-10)
         .map(({ date, total }) => ({
-          name: new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short' }).toUpperCase(),
+          name: new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }),
           val: total || 0,
         }));
     } catch {
@@ -166,7 +153,7 @@ export const HistoryScreen = React.memo(({ loading = false, logs = [], configs =
                    </div>
                    <div className="flex items-center gap-2.5 shrink-0">
                      <button type="button" onClick={() => onEdit && onEdit(log)} aria-label={`Edit entry for ${formatDateDisplay(log.logDate)}`} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-white/5 text-neutral-500 hover:text-[#FAFAFA] transition-all"><Edit2 size={16} /></button>
-                     <button type="button" onClick={() => setDeleteTarget(log.id)} aria-label={`Delete entry for ${formatDateDisplay(log.logDate)}`} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-white/5 text-neutral-500 hover:text-rose-500 transition-all"><Trash2 size={16} /></button>
+                     <button type="button" onClick={() => onDeleteLog && onDeleteLog(log)} aria-label={`Delete entry for ${formatDateDisplay(log.logDate)}`} className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-white/5 text-neutral-500 hover:text-rose-500 transition-all"><Trash2 size={16} /></button>
                    </div>
                  </div>
                );
@@ -182,7 +169,6 @@ export const HistoryScreen = React.memo(({ loading = false, logs = [], configs =
          </div>
        </div>
 
-       <ConfirmModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handlePurge} title="Delete entry?" message="This permanently removes the log for that day." confirmText="Delete" />
        <MetricInfoModal isOpen={!!infoType} onClose={() => setInfoType(null)} type={infoType} />
 
        <AnimatePresence>

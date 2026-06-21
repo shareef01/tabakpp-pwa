@@ -239,6 +239,35 @@ export const RegistryService = {
     });
   },
 
+  /** Re-create a previously deleted log (used by the History undo toast). */
+  restoreLog: async (uid, log, { configs = [], unitPrice = 0.5 } = {}) => {
+    if (!uid || !log?.id) throw new Error('INVALID_LOG_RESTORE');
+    await assertFirestoreUid(uid);
+    const { id, finalizedAt, updatedAt, counts, ...rest } = log;
+    const normalized = normalizeCounts(counts);
+    if (Object.keys(normalized).length === 0) throw new Error('EMPTY_LOG_RESTORE');
+
+    return runTransaction(db, async (transaction) => {
+      const logRef = doc(db, 'users', uid, 'logs', id);
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await transaction.get(userRef);
+      const fin = SmokingCalculator.calculateFinancials({ counts: normalized }, configs, unitPrice);
+
+      transaction.set(logRef, {
+        ...rest,
+        counts: normalized,
+        finalizedAt: serverTimestamp(),
+      });
+
+      if (userSnap.exists() && (fin.saved !== 0 || fin.wasted !== 0)) {
+        transaction.update(userRef, {
+          'lifetimeAggregates.saved': increment(fin.saved),
+          'lifetimeAggregates.wasted': increment(fin.wasted),
+        });
+      }
+    });
+  },
+
   deleteLog: async (uid, docId, { configs = [], unitPrice = 0.5 } = {}) => {
     if (!uid || !docId) throw new Error('INVALID_LOG_DELETE');
     await assertFirestoreUid(uid);
