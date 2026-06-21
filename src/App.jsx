@@ -21,14 +21,14 @@ import { ConfirmModal } from './features/shared/ConfirmModal';
 import { Toast } from './features/shared/Toast';
 import { DashboardSkeleton } from './features/dashboard/components/DashboardSkeleton';
 
-const ProtocolForm = lazyWithRetry(() => import('./features/shared/ProtocolForm').then(m => ({ default: m.ProtocolForm })));
-const EditLogOverlay = lazyWithRetry(() => import('./features/history/components/EditLogOverlay').then(m => ({ default: m.EditLogOverlay })));
-const LogoutModal = lazyWithRetry(() => import('./features/shared/LogoutModal').then(m => ({ default: m.LogoutModal })));
-
 const lazyWithRetry = (componentImport) => lazy(async () => {
   try { return await componentImport(); }
   catch { window.location.reload(); return { default: () => null }; }
 });
+
+const ProtocolForm = lazyWithRetry(() => import('./features/shared/ProtocolForm').then(m => ({ default: m.ProtocolForm })));
+const EditLogOverlay = lazyWithRetry(() => import('./features/history/components/EditLogOverlay').then(m => ({ default: m.EditLogOverlay })));
+const LogoutModal = lazyWithRetry(() => import('./features/shared/LogoutModal').then(m => ({ default: m.LogoutModal })));
 
 const AuthScreen = lazyWithRetry(() => import('./features/auth/AuthScreen').then(m => ({ default: m.AuthScreen })));
 const TrackerCard = lazyWithRetry(() => import('./features/dashboard/components/TrackerCard').then(m => ({ default: m.TrackerCard })));
